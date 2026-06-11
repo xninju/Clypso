@@ -105,12 +105,9 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-[#0f0f0f] border-t border-[#3a3a3a] py-5 px-4">
-        <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="max-w-3xl mx-auto flex items-center justify-center">
           <p className="text-xs text-[#555]">
-            © {new Date().getFullYear()} Clypso. For personal use only.
-          </p>
-          <p className="text-xs text-[#555]">
-            Built with Next.js · FastAPI · Neon DB
+            © {new Date().getFullYear()} Clypso.
           </p>
         </div>
       </footer>

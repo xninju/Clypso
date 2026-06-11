@@ -54,7 +54,7 @@ export default function StatsBar() {
   return (
     <div className="border-t border-[#3a3a3a] bg-[#1a1a1a] py-6 px-4">
       <p className="text-center text-xs text-[#717171] uppercase tracking-widest mb-4">
-        Live Stats
+        Stats
       </p>
       <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
         {items.map((item) => (
