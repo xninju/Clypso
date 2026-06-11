@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Stats {
+  id             Int      @id @default(1)
+  total_visits   Int      @default(0)
+  yt_downloads   Int      @default(0)
+  ig_downloads   Int      @default(0)
+  updated_at     DateTime @updatedAt
+}
+
+model DownloadLog {
+  id         Int      @id @default(autoincrement())
+  platform   String   // "youtube" | "instagram"
+  url        String
+  media_type String?  // "video" | "playlist" | "reel" | "post" | "carousel"
+  created_at DateTime @default(now())
+}
