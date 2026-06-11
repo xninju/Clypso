@@ -10,13 +10,16 @@ type Tab = "youtube" | "instagram";
 export default function Home() {
   const [tab, setTab] = useState<Tab>("youtube");
 
-  // Increment visit count on mount
+  // Increment visit count only once per browser session (not on refresh)
   useEffect(() => {
-    fetch("/api/stats", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "visit" }),
-    }).catch(() => {});
+    if (!sessionStorage.getItem("visited")) {
+      sessionStorage.setItem("visited", "1");
+      fetch("/api/stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "visit" }),
+      }).catch(() => {});
+    }
   }, []);
 
   return (
