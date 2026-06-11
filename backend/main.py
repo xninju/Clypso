@@ -7,7 +7,11 @@ app = FastAPI(title="Clypso API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with your Vercel domain in production
+    allow_origins=[
+    "https://clypso.vercel.app",
+    "https://clypso.qzz.io",
+    "*"
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
