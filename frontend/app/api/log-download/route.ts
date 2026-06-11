@@ -6,6 +6,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { platform, url, media_type } = body;
 
+    if (!platform || typeof platform !== "string" || !url || typeof url !== "string") {
+      return NextResponse.json({ error: "Missing required fields: platform and url" }, { status: 400 });
+    }
+
     await prisma.downloadLog.create({
       data: { platform, url, media_type },
     });

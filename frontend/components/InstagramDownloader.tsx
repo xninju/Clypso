@@ -37,6 +37,10 @@ export default function InstagramDownloader() {
 
   const handleFetch = async () => {
     if (!url.trim()) return;
+    if (!API) {
+      setError("Backend URL is not configured. Please set NEXT_PUBLIC_BACKEND_URL.");
+      return;
+    }
     setLoading(true);
     setError("");
     setInfo(null);
@@ -44,7 +48,6 @@ export default function InstagramDownloader() {
     try {
       const res = await axios.post(`${API}/instagram/info`, { url });
       setInfo(res.data);
-      await logDownload("instagram", url, res.data.post_type);
     } catch (e: any) {
       setError(
         e?.response?.data?.detail ||
@@ -66,12 +69,15 @@ export default function InstagramDownloader() {
   };
 
   const handleDownload = (item: MediaItem, index: number) => {
+    logDownload("instagram", url, info?.post_type || "post");
     const a = document.createElement("a");
     a.href = item.url;
     a.download = `instagram_${index + 1}.${item.ext}`;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   const clear = () => {
@@ -161,9 +167,10 @@ export default function InstagramDownloader() {
                   {/* Thumbnail */}
                   <div className="relative flex-shrink-0">
                     <img
-                      src={item.thumbnail || "/placeholder.png"}
+                      src={item.thumbnail}
                       alt={`item ${i + 1}`}
                       className="w-16 h-16 object-cover rounded-lg"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                     {item.media_type === "video" && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">

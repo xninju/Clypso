@@ -69,6 +69,10 @@ export default function YoutubeDownloader() {
 
   const handleFetch = async () => {
     if (!url.trim()) return;
+    if (!API) {
+      setError("Backend URL is not configured. Please set NEXT_PUBLIC_BACKEND_URL.");
+      return;
+    }
     setLoading(true);
     setError("");
     setInfo(null);
@@ -76,7 +80,6 @@ export default function YoutubeDownloader() {
     try {
       const res = await axios.post(`${API}/youtube/info`, { url });
       setInfo(res.data);
-      await logDownload("youtube", url, res.data.type);
     } catch (e: any) {
       setError(e?.response?.data?.detail || "Failed to fetch video info. Check the URL and try again.");
     } finally {
@@ -105,12 +108,15 @@ export default function YoutubeDownloader() {
   };
 
   const handleDownload = (fmt: Format, title: string) => {
+    logDownload("youtube", url, info?.type || "video");
     const a = document.createElement("a");
     a.href = fmt.url;
     a.download = `${title}.${fmt.ext}`;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   const clear = () => {

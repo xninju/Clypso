@@ -94,13 +94,14 @@ def parse_formats(formats: list) -> list:
             url = f.get("url")
             height = f.get("height")
             if url and height:
+                has_audio = f.get("acodec", "none") != "none"
                 result.append({
                     "format_id": f.get("format_id"),
                     "label": f"{height}p",
                     "ext": f.get("ext", "mp4"),
                     "filesize": format_filesize(f.get("filesize")),
                     "url": url,
-                    "has_audio": True,
+                    "has_audio": has_audio,
                 })
                 break
 
