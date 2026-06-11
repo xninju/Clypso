@@ -49,6 +49,29 @@ def init_cookies() -> None:
     print("[cookies] No cookies found — YouTube may block requests from this IP.")
 
 
+def _find_node() -> Optional[str]:
+    """Return the Node.js executable path if available."""
+    import shutil
+    import subprocess
+
+    # 1. Explicit env var
+    node_path = os.getenv("NODE_PATH") or os.getenv("NODE_BINARY")
+    if node_path and os.path.isfile(node_path):
+        return node_path
+
+    # 2. ~/.local/bin/node (symlink we create during setup)
+    local_node = os.path.expanduser("~/.local/bin/node")
+    if os.path.isfile(local_node):
+        return local_node
+
+    # 3. System PATH
+    found = shutil.which("node")
+    if found:
+        return found
+
+    return None
+
+
 def get_ydl_opts(extract_flat: bool = False) -> dict:
     opts = {
         "quiet": False,
@@ -57,7 +80,7 @@ def get_ydl_opts(extract_flat: bool = False) -> dict:
         "socket_timeout": 30,
         "extractor_args": {
             "youtube": {
-                "player_client": ["tv_embedded", "ios", "web"],
+                "player_client": ["web", "tv_embedded", "ios"],
                 "player_skip": [],
             }
         },
@@ -70,6 +93,11 @@ def get_ydl_opts(extract_flat: bool = False) -> dict:
 
     if _cookies_file and os.path.exists(_cookies_file):
         opts["cookiefile"] = _cookies_file
+
+    # Configure Node.js runtime path for bgutil POT provider
+    node = _find_node()
+    if node:
+        opts["js_runtimes"] = {"node": node}
 
     return opts
 
