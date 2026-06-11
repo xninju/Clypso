@@ -19,6 +19,8 @@ _cookies_file: Optional[str] = None
 def init_cookies() -> None:
     """Called once at startup — write COOKIES_CONTENT env var to a temp file."""
     global _cookies_file
+
+    # 1. Env var takes priority (Render / production)
     content = os.getenv("COOKIES_CONTENT", "").strip()
     if content:
         tmp = tempfile.NamedTemporaryFile(
@@ -27,8 +29,24 @@ def init_cookies() -> None:
         tmp.write(content)
         tmp.close()
         _cookies_file = tmp.name
-    elif os.path.exists("/app/cookies.txt"):
+        print(f"[cookies] Loaded from COOKIES_CONTENT env var → {_cookies_file}")
+        return
+
+    # 2. Local cookies.txt next to this repo (dev / local setup_cookies.py)
+    local_path = os.path.join(os.path.dirname(__file__), "..", "cookies.txt")
+    local_path = os.path.abspath(local_path)
+    if os.path.exists(local_path):
+        _cookies_file = local_path
+        print(f"[cookies] Loaded from local file → {_cookies_file}")
+        return
+
+    # 3. Docker path
+    if os.path.exists("/app/cookies.txt"):
         _cookies_file = "/app/cookies.txt"
+        print("[cookies] Loaded from /app/cookies.txt")
+        return
+
+    print("[cookies] No cookies found — YouTube may block requests from this IP.")
 
 
 def get_ydl_opts(extract_flat: bool = False) -> dict:
