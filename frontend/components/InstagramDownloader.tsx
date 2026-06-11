@@ -46,7 +46,7 @@ export default function InstagramDownloader() {
     setInfo(null);
 
     try {
-      const res = await axios.post(`${API}/instagram/info`, { url });
+      const res = await axios.post(`${API}/instagram/info`, { url }, { timeout: 30000 });
       setInfo(res.data);
     } catch (e: any) {
       setError(

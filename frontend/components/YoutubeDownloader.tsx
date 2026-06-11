@@ -78,7 +78,7 @@ export default function YoutubeDownloader() {
     setInfo(null);
 
     try {
-      const res = await axios.post(`${API}/youtube/info`, { url });
+      const res = await axios.post(`${API}/youtube/info`, { url }, { timeout: 30000 });
       setInfo(res.data);
     } catch (e: any) {
       setError(e?.response?.data?.detail || "Failed to fetch video info. Check the URL and try again.");

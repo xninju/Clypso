@@ -1,26 +1,45 @@
 import yt_dlp
-from typing import Optional
+import tempfile
+import os
 import random
+from typing import Optional
 
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15",
 ]
 
+_cookies_file: Optional[str] = None
 
-def get_ydl_opts(extract_flat: bool = False, use_cookies: bool = False) -> dict:
-    import os
+
+def init_cookies() -> None:
+    """Called once at startup — write COOKIES_CONTENT env var to a temp file."""
+    global _cookies_file
+    content = os.getenv("COOKIES_CONTENT", "").strip()
+    if content:
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, prefix="yt_cookies_"
+        )
+        tmp.write(content)
+        tmp.close()
+        _cookies_file = tmp.name
+    elif os.path.exists("/app/cookies.txt"):
+        _cookies_file = "/app/cookies.txt"
+
+
+def get_ydl_opts(extract_flat: bool = False) -> dict:
     opts = {
-        "quiet": True,
-        "no_warnings": True,
+        "quiet": False,
+        "no_warnings": False,
         "extract_flat": extract_flat,
         "socket_timeout": 30,
         "extractor_args": {
             "youtube": {
-                "player_client": ["web_creator", "android", "web"],
+                "player_client": ["tv_embedded", "ios", "web"],
                 "player_skip": [],
             }
         },
@@ -31,10 +50,8 @@ def get_ydl_opts(extract_flat: bool = False, use_cookies: bool = False) -> dict:
         },
     }
 
-    # Use cookies file if it exists
-    cookies_path = "/app/cookies.txt"
-    if os.path.exists(cookies_path):
-        opts["cookiefile"] = cookies_path
+    if _cookies_file and os.path.exists(_cookies_file):
+        opts["cookiefile"] = _cookies_file
 
     return opts
 
@@ -61,7 +78,6 @@ def parse_formats(formats: list) -> list:
     seen = set()
     result = []
 
-    # Combined video+audio formats first
     for f in formats:
         height = f.get("height")
         vcodec = f.get("vcodec", "none")
@@ -85,10 +101,8 @@ def parse_formats(formats: list) -> list:
                     "has_audio": True,
                 })
 
-    # Sort by quality descending
     result.sort(key=lambda x: int(x["label"].replace("p", "")), reverse=True)
 
-    # If no combined formats found, add best available
     if not result:
         for f in formats:
             url = f.get("url")
