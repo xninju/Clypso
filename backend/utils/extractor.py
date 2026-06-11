@@ -1,14 +1,42 @@
 import yt_dlp
 from typing import Optional
+import random
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
+]
 
 
-def get_ydl_opts(extract_flat: bool = False) -> dict:
-    return {
+def get_ydl_opts(extract_flat: bool = False, use_cookies: bool = False) -> dict:
+    import os
+    opts = {
         "quiet": True,
         "no_warnings": True,
         "extract_flat": extract_flat,
         "socket_timeout": 30,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web_creator", "android", "web"],
+                "player_skip": [],
+            }
+        },
+        "http_headers": {
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
     }
+
+    # Use cookies file if it exists
+    cookies_path = "/app/cookies.txt"
+    if os.path.exists(cookies_path):
+        opts["cookiefile"] = cookies_path
+
+    return opts
 
 
 def extract_info(url: str, download: bool = False, extract_flat: bool = False) -> Optional[dict]:
@@ -44,7 +72,6 @@ def parse_formats(formats: list) -> list:
         if not url or vcodec == "none":
             continue
 
-        # Only include formats that have both video and audio
         if acodec != "none" and height:
             label = f"{height}p"
             if label not in seen:
