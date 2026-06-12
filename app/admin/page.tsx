@@ -52,48 +52,40 @@ const YT_SERVICES: Record<string, ServiceInfo> = {
     provider: "ytjar",
     host: "yt-api.p.rapidapi.com",
     url: "https://rapidapi.com/ytjar/api/yt-api",
-    free: "500 req/month",
+    free: "300 req/month",
   },
   yt_media_dl: {
     name: "YouTube Media Downloader",
     provider: "DataFanatic",
     host: "youtube-media-downloader.p.rapidapi.com",
     url: "https://rapidapi.com/datafanatic/api/youtube-media-downloader",
-    free: "200 req/month",
+    free: "100 req/month",
   },
   ytstream: {
     name: "YTStream",
     provider: "ytjar",
     host: "ytstream-download-youtube-videos.p.rapidapi.com",
     url: "https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos",
-    free: "500 req/month",
+    free: "300 req/month",
   },
 };
 
 const IG_SERVICES: Record<string, ServiceInfo> = {
-  ig_downloader: {
-    name: "Instagram Downloader",
-    provider: "isholaomotayo",
-    host: "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
-    url: "https://rapidapi.com/isholaomotayo/api/instagram-downloader-download-instagram-videos-stories1",
+  ig_diyorbek: {
+    name: "Instagram Post/Reels/Stories Downloader",
+    provider: "diyorbekkanal",
+    host: "instagram-post-reels-stories-downloader-api.p.rapidapi.com",
+    url: "https://rapidapi.com/diyorbekkanal/api/instagram-post-reels-stories-downloader-api",
     free: "100 req/month",
   },
-  ig_social: {
-    name: "Social Media Video Downloader",
-    provider: "ido2",
-    host: "social-media-video-downloader.p.rapidapi.com",
-    url: "https://rapidapi.com/ido2/api/social-media-video-downloader",
-    free: "~500 req/month",
-  },
-  ig_allinone: {
-    name: "All-in-One Social Downloader",
-    provider: "mwlang",
-    host: "all-in-one-social-media-downloader.p.rapidapi.com",
-    url: "https://rapidapi.com/mwlang/api/all-in-one-social-media-downloader",
-    free: "50 req/day",
+  ig_safesite: {
+    name: "Instagram Downloader (Stories/Videos)",
+    provider: "safesite15",
+    host: "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+    url: "https://rapidapi.com/safesite15/api/instagram-downloader-download-instagram-stories-videos4",
+    free: "40 req/month",
   },
 };
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -518,19 +510,14 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
               return (
                 <div key={k.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* Priority */}
                     <span className="flex-shrink-0 w-5 h-5 bg-[#2a2a2a] rounded text-xs font-bold text-[#aaa] flex items-center justify-center">
                       {k.priority}
                     </span>
-
-                    {/* Enable dot */}
                     <button
                       onClick={() => updateKey(k.id, { enabled: !k.enabled })}
                       title={k.enabled ? "Click to disable" : "Click to enable"}
                       className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-opacity hover:opacity-70 ${k.enabled ? "bg-green-500" : "bg-[#555]"}`}
                     />
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-[#f1f1f1] truncate">
                         {meta?.name || k.service}
@@ -540,11 +527,7 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
                         {revealId === k.id ? k.key : mask(k.key)}
                       </p>
                     </div>
-
-                    {/* Req count */}
                     <span className="text-xs text-[#555] flex-shrink-0">{fmt(k.req_count)} req</span>
-
-                    {/* Actions */}
                     <div className="flex items-center gap-0.5 flex-shrink-0">
                       <button onClick={() => setRevealId(revealId === k.id ? null : k.id)} className="p-1.5 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors">
                         {revealId === k.id ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -569,8 +552,6 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
                       </button>
                     </div>
                   </div>
-
-                  {/* RapidAPI link note */}
                   {meta && (
                     <div className="mt-1.5 ml-7">
                       <a
@@ -589,7 +570,6 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
           </div>
         )}
 
-        {/* Cascade note */}
         <p className="text-xs text-[#3a3a3a] text-center pt-1">
           Keys tried in priority order · auto-cascades to next on failure
         </p>
@@ -751,8 +731,9 @@ export default function AdminPage() {
       <header className="border-b border-[#3a3a3a] bg-[#0f0f0f] sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {/* ── Logo: same as home page ── */}
             <a href="/" className="w-7 h-7 bg-[#ff0000] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">C</span>
+              <img src="/logo.svg" alt="Clypso" className="w-4 h-4" />
             </a>
             <span className="text-sm text-[#717171]">/</span>
             <span className="text-sm font-semibold text-[#f1f1f1]">Admin</span>
@@ -767,7 +748,6 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Tabs */}
         <div className="flex gap-1 bg-[#1a1a1a] rounded-xl p-1 mb-8 w-fit">
           {tabs.map((t) => (
             <button
@@ -791,4 +771,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

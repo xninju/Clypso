@@ -24,9 +24,10 @@ async function getIgKeys(): Promise<KeyRecord[]> {
     for (const r of rows) keys.push({ id: r.id, service: r.service, key: r.key });
   } catch {}
 
+  // env var fallback — maps to diyorbek as default
   const envKey = process.env.RAPIDAPI_IG_KEY || "";
-  if (envKey && !keys.find((k) => k.service === "ig_downloader")) {
-    keys.push({ id: null, service: "ig_downloader", key: envKey });
+  if (envKey && !keys.find((k) => k.service === "ig_diyorbek")) {
+    keys.push({ id: null, service: "ig_diyorbek", key: envKey });
   }
 
   _keyCache = keys;
@@ -62,62 +63,107 @@ function fmtSize(size: unknown): string {
   return `${n.toFixed(1)} TB`;
 }
 
-async function tryIgDownloader(url: string, key: string) {
+// ─── API 1: diyorbekkanal ─────────────────────────────────────────────────────
+// GET https://instagram-post-reels-stories-downloader-api.p.rapidapi.com/instagram/?url=...
+// Response shape: { result: [ { url, thumbnail, type } ] } or { result: { url, thumbnail } }
+
+async function tryDiyorbek(url: string, key: string): Promise<Record<string, unknown> | null> {
   const r = await fetch(
-    `https://instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com/get-info-rapidapi?url=${encodeURIComponent(url)}`,
+    `https://instagram-post-reels-stories-downloader-api.p.rapidapi.com/instagram/?url=${encodeURIComponent(url)}`,
     {
       headers: {
         "x-rapidapi-key": key,
-        "x-rapidapi-host": "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
+        "x-rapidapi-host": "instagram-post-reels-stories-downloader-api.p.rapidapi.com",
+        "Content-Type": "application/json",
       },
       signal: AbortSignal.timeout(15000),
     }
   );
   if (!r.ok) return null;
-  return r.json();
+  const data = await r.json();
+  // must have some result
+  if (!data || (Array.isArray(data.result) && data.result.length === 0)) return null;
+  if (data.result === null || data.result === undefined) return null;
+  return data;
 }
 
-async function tryIgSocial(url: string, key: string) {
+// ─── API 2: safesite15 ────────────────────────────────────────────────────────
+// GET https://instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com/convert?url=...
+// Response shape: { media: [ { url, thumbnail, type, quality } ] } or { url, thumbnail }
+
+async function trySafesite(url: string, key: string): Promise<Record<string, unknown> | null> {
   const r = await fetch(
-    `https://social-media-video-downloader.p.rapidapi.com/smvd/get/all?url=${encodeURIComponent(url)}`,
+    `https://instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com/convert?url=${encodeURIComponent(url)}`,
     {
       headers: {
         "x-rapidapi-key": key,
-        "x-rapidapi-host": "social-media-video-downloader.p.rapidapi.com",
+        "x-rapidapi-host": "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+        "Content-Type": "application/json",
       },
       signal: AbortSignal.timeout(15000),
     }
   );
   if (!r.ok) return null;
-  return r.json();
+  const data = await r.json();
+  if (!data) return null;
+  // reject empty responses
+  if (Array.isArray(data.media) && data.media.length === 0) return null;
+  if (!data.media && !data.url && !data.video_url) return null;
+  return data;
 }
 
-async function tryIgAllInOne(url: string, key: string) {
-  const r = await fetch(
-    `https://all-in-one-social-media-downloader.p.rapidapi.com/v1?url=${encodeURIComponent(url)}`,
-    {
-      headers: {
-        "x-rapidapi-key": key,
-        "x-rapidapi-host": "all-in-one-social-media-downloader.p.rapidapi.com",
-      },
-      signal: AbortSignal.timeout(15000),
-    }
-  );
-  if (!r.ok) return null;
-  return r.json();
-}
+// ─── Parse diyorbek response ──────────────────────────────────────────────────
 
-function parseResult(data: Record<string, unknown>, postType: string) {
+function parseDiyorbek(data: Record<string, unknown>, postType: string) {
   const items: unknown[] = [];
-  const medias = (data.medias || data.media || data.links || data.data || []) as Record<string, unknown>[];
 
-  if (Array.isArray(medias) && medias.length) {
-    for (const m of medias) {
-      const url = (m.url || m.link || m.src) as string;
+  // result can be array or object
+  const result = data.result;
+  const arr: Record<string, unknown>[] = Array.isArray(result)
+    ? result
+    : result && typeof result === "object"
+    ? [result as Record<string, unknown>]
+    : [];
+
+  for (const item of arr) {
+    const url = (item.url || item.video_url || item.image_url) as string;
+    if (!url) continue;
+    const type = (item.type as string) || "";
+    const isVideo =
+      postType === "reel" ||
+      type.toLowerCase().includes("video") ||
+      url.includes(".mp4");
+    items.push({
+      media_type: isVideo ? "video" : "image",
+      url,
+      thumbnail: (item.thumbnail || item.thumb || url) as string,
+      quality: (item.quality || item.resolution || "Original") as string,
+      ext: isVideo ? "mp4" : "jpg",
+      filesize: fmtSize(item.size),
+    });
+  }
+
+  return items;
+}
+
+// ─── Parse safesite response ──────────────────────────────────────────────────
+
+function parseSafesite(data: Record<string, unknown>, postType: string) {
+  const items: unknown[] = [];
+
+  // safesite returns { media: [...] } or flat { url, thumbnail }
+  const mediaArr = Array.isArray(data.media)
+    ? (data.media as Record<string, unknown>[])
+    : [];
+
+  if (mediaArr.length) {
+    for (const m of mediaArr) {
+      const url = (m.url || m.link) as string;
       if (!url) continue;
+      const type = (m.type as string) || "";
       const isVideo =
         postType === "reel" ||
-        String(m.type || "").toLowerCase().includes("video") ||
+        type.toLowerCase().includes("video") ||
         url.includes(".mp4");
       items.push({
         media_type: isVideo ? "video" : "image",
@@ -131,8 +177,9 @@ function parseResult(data: Record<string, unknown>, postType: string) {
     if (items.length) return items;
   }
 
-  const videoUrl = (data.video_url || data.videoUrl || data.url) as string;
-  const imageUrl = (data.image_url || data.imageUrl || data.thumbnail) as string;
+  // flat response fallback
+  const videoUrl = (data.video_url || data.url) as string;
+  const imageUrl = (data.image_url || data.thumbnail) as string;
 
   if (videoUrl) {
     items.push({
@@ -157,11 +204,20 @@ function parseResult(data: Record<string, unknown>, postType: string) {
   return items;
 }
 
-const SERVICE_HANDLERS: Record<string, (url: string, key: string) => Promise<Record<string, unknown> | null>> = {
-  ig_downloader: tryIgDownloader,
-  ig_social: tryIgSocial,
-  ig_allinone: tryIgAllInOne,
+// ─── Service map ──────────────────────────────────────────────────────────────
+
+const SERVICE_HANDLERS: Record<
+  string,
+  {
+    fetch: (url: string, key: string) => Promise<Record<string, unknown> | null>;
+    parse: (data: Record<string, unknown>, postType: string) => unknown[];
+  }
+> = {
+  ig_diyorbek: { fetch: tryDiyorbek, parse: parseDiyorbek },
+  ig_safesite:  { fetch: trySafesite,  parse: parseSafesite  },
 };
+
+// ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
   try {
@@ -184,10 +240,10 @@ export async function POST(req: Request) {
       const handler = SERVICE_HANDLERS[rec.service];
       if (!handler) continue;
       try {
-        const result = await handler(trimmed, rec.key);
+        const result = await handler.fetch(trimmed, rec.key);
         if (!result) continue;
 
-        const items = parseResult(result, postType);
+        const items = handler.parse(result, postType);
         if (items.length) {
           bumpCount(rec.id);
           const isCarousel = items.length > 1;
