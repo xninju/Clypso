@@ -204,6 +204,7 @@ function ApiKeysTab({ pin }: { pin: string }) {
   const [toast, setToast] = useState("");
 
   const [form, setForm] = useState({ service: "yt_api", label: "", key: "", priority: "1", enabled: true });
+  const [importing, setImporting] = useState(false);
 
   const headers = { "Content-Type": "application/json", "x-admin-pin": pin };
 
@@ -265,6 +266,26 @@ function ApiKeysTab({ pin }: { pin: string }) {
     } catch {}
   };
 
+  const importFromEnv = async () => {
+    setImporting(true);
+    try {
+      const r = await fetch("/api/admin/import-env", { method: "POST", headers: { "x-admin-pin": pin } });
+      const d = await r.json();
+      await load();
+      if (d.imported?.length > 0) {
+        showToast(`Imported ${d.imported.length} key(s): ${d.imported.join(", ")}`);
+      } else if (d.skipped?.length > 0) {
+        showToast("All env var keys already exist in DB — nothing new to import");
+      } else {
+        showToast("No env var keys found to import");
+      }
+    } catch {
+      showToast("Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {toast && (
@@ -281,6 +302,14 @@ function ApiKeysTab({ pin }: { pin: string }) {
         <div className="flex gap-2">
           <button onClick={load} className="text-[#717171] hover:text-[#f1f1f1] p-2 rounded-lg hover:bg-[#2a2a2a] transition-colors">
             <RefreshCw size={15} />
+          </button>
+          <button
+            onClick={importFromEnv}
+            disabled={importing}
+            title="Copy keys from Vercel/server env vars into the database"
+            className="bg-[#1a1a2a] hover:bg-[#2a2a4a] disabled:opacity-50 text-[#a0a0ff] border border-[#3a3a6a] text-sm px-3 py-2 rounded-xl flex items-center gap-2 transition-colors"
+          >
+            <Download size={15} /> {importing ? "Importing…" : "Import from Env"}
           </button>
           <button
             onClick={() => { resetForm(); setShowAdd(true); setEditId(null); }}
