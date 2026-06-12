@@ -43,10 +43,12 @@ export default function InstagramDownloader() {
       const res = await axios.post(`/api/instagram/info`, { url }, { timeout: 45000 });
       setInfo(res.data);
     } catch (e: any) {
-      setError(
-        e?.response?.data?.detail ||
-          "Failed to fetch Instagram content. Make sure the post is public."
-      );
+      const detail = e?.response?.data?.detail || "";
+      if (detail === "NO_API_KEY") {
+        setError("NO_API_KEY");
+      } else {
+        setError(detail || "Failed to fetch Instagram content. Make sure the post is public.");
+      }
     } finally {
       setLoading(false);
     }
@@ -108,9 +110,30 @@ export default function InstagramDownloader() {
       </div>
 
       {/* Error */}
-      {error && (
+      {error && error !== "NO_API_KEY" && (
         <div className="mt-4 bg-[#2a1a1a] border border-[#5a2020] rounded-xl p-4 text-sm text-[#ff6b6b]">
           {error}
+        </div>
+      )}
+
+      {/* No API key notice */}
+      {error === "NO_API_KEY" && (
+        <div className="mt-4 bg-[#1a1a2a] border border-[#3a3a6a] rounded-xl p-4 text-sm">
+          <p className="text-[#a0a0ff] font-medium mb-1">Instagram API key required</p>
+          <p className="text-[#717171] mb-3 text-xs leading-relaxed">
+            Instagram blocks all public requests. A free RapidAPI key is needed to download reels and posts.
+          </p>
+          <ol className="text-xs text-[#555] space-y-1 mb-3 list-decimal list-inside">
+            <li>Sign up free at <span className="text-[#a0a0ff]">rapidapi.com</span></li>
+            <li>Search &quot;Instagram Downloader&quot; → subscribe (free tier available)</li>
+            <li>Copy your API key and add it in the Admin panel below</li>
+          </ol>
+          <a
+            href="/admin"
+            className="inline-flex items-center gap-2 bg-[#2a2a4a] hover:bg-[#3a3a6a] text-[#a0a0ff] text-xs px-3 py-2 rounded-lg transition-colors"
+          >
+            → Open Admin Panel to add key
+          </a>
         </div>
       )}
 

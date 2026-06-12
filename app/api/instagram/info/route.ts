@@ -34,9 +34,14 @@ async function getIgKeys(): Promise<KeyRecord[]> {
 }
 
 function getPostType(url: string): string {
-  if (url.includes("/reel/")) return "reel";
+  if (url.includes("/reel/") || url.includes("/reels/")) return "reel";
   if (url.includes("/stories/")) return "story";
   return "post";
+}
+
+function extractShortcode(url: string): string | null {
+  const m = url.match(/instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
 }
 
 function fmtSize(size: unknown): string {
@@ -55,17 +60,17 @@ async function tryIgDownloaderV3(url: string, key: string) {
     {
       headers: {
         "x-rapidapi-key": key,
-        "x-rapidapi-host": "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
+        "x-rapidapi-host":
+          "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
       },
       signal: AbortSignal.timeout(15000),
     }
   );
   if (!r.ok) return null;
-  const d = await r.json();
-  return d;
+  return r.json();
 }
 
-async function tryIgSnapSave(url: string, key: string) {
+async function tryIgSocialDownloader(url: string, key: string) {
   const r = await fetch(
     `https://social-media-video-downloader.p.rapidapi.com/smvd/get/all?url=${encodeURIComponent(url)}`,
     {
@@ -80,63 +85,18 @@ async function tryIgSnapSave(url: string, key: string) {
   return r.json();
 }
 
-export async function POST(req: Request) {
-  try {
-    const { url } = await req.json();
-    if (!url) return NextResponse.json({ error: "URL is required" }, { status: 400 });
-    const trimmed = url.trim();
-    const postType = getPostType(trimmed);
-    const keys = await getIgKeys();
-
-    for (const rec of keys) {
-      try {
-        let result = null;
-
-        if (rec.service === "ig_downloader" || rec.service === "ig_v3") {
-          result = await tryIgDownloaderV3(trimmed, rec.key);
-        } else if (rec.service === "ig_snapsave" || rec.service === "ig_social") {
-          result = await tryIgSnapSave(trimmed, rec.key);
-        }
-
-        if (!result) continue;
-
-        const items = parseIgResult(result, postType);
-        if (items.length) {
-          const isCarousel = items.length > 1;
-          const firstItem = items[0] as Record<string, unknown>;
-          return NextResponse.json({
-            type: isCarousel ? "carousel" : "single",
-            post_type: postType,
-            title: result.title || result.caption || "Instagram Post",
-            thumbnail: (firstItem?.thumbnail as string) || null,
-            item_count: items.length,
-            items,
-          });
-        }
-      } catch (e) {
-        console.log(`[instagram] ${rec.service} failed: ${e}`);
-      }
-    }
-
-    return NextResponse.json(
-      { detail: "Could not fetch Instagram content. Make sure the post is public and try again." },
-      { status: 400 }
-    );
-  } catch (e: unknown) {
-    return NextResponse.json({ detail: String(e) }, { status: 500 });
-  }
-}
-
 function parseIgResult(data: Record<string, unknown>, postType: string) {
   const items: unknown[] = [];
-
   const medias = (data.medias || data.media || data.links || []) as Record<string, unknown>[];
 
   if (Array.isArray(medias) && medias.length) {
     for (const m of medias) {
       const url = (m.url || m.link || m.src) as string;
       if (!url) continue;
-      const isVideo = postType === "reel" || String(m.type || "").toLowerCase().includes("video") || url.includes(".mp4");
+      const isVideo =
+        postType === "reel" ||
+        String(m.type || "").toLowerCase().includes("video") ||
+        url.includes(".mp4");
       items.push({
         media_type: isVideo ? "video" : "image",
         url,
@@ -173,4 +133,66 @@ function parseIgResult(data: Record<string, unknown>, postType: string) {
   }
 
   return items;
+}
+
+export async function POST(req: Request) {
+  try {
+    const { url } = await req.json();
+    if (!url) return NextResponse.json({ detail: "URL is required" }, { status: 400 });
+    const trimmed = url.trim();
+    const postType = getPostType(trimmed);
+    const shortcode = extractShortcode(trimmed);
+
+    if (!shortcode) {
+      return NextResponse.json({ detail: "Could not parse Instagram URL." }, { status: 400 });
+    }
+
+    const keys = await getIgKeys();
+
+    if (keys.length === 0) {
+      return NextResponse.json(
+        {
+          detail: "NO_API_KEY",
+        },
+        { status: 503 }
+      );
+    }
+
+    for (const rec of keys) {
+      try {
+        let result: Record<string, unknown> | null = null;
+
+        if (rec.service === "ig_downloader" || rec.service === "ig_v3") {
+          result = await tryIgDownloaderV3(trimmed, rec.key);
+        } else if (rec.service === "ig_snapsave" || rec.service === "ig_social") {
+          result = await tryIgSocialDownloader(trimmed, rec.key);
+        }
+
+        if (!result) continue;
+
+        const items = parseIgResult(result, postType);
+        if (items.length) {
+          const isCarousel = items.length > 1;
+          const firstItem = items[0] as Record<string, unknown>;
+          return NextResponse.json({
+            type: isCarousel ? "carousel" : "single",
+            post_type: postType,
+            title: (result.title as string) || (result.caption as string) || "Instagram Post",
+            thumbnail: (firstItem?.thumbnail as string) || null,
+            item_count: items.length,
+            items,
+          });
+        }
+      } catch (e) {
+        console.log(`[instagram] ${rec.service} failed: ${e}`);
+      }
+    }
+
+    return NextResponse.json(
+      { detail: "Could not fetch Instagram content. The post may be private or unavailable." },
+      { status: 400 }
+    );
+  } catch (e: unknown) {
+    return NextResponse.json({ detail: String(e) }, { status: 500 });
+  }
 }

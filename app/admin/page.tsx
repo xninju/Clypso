@@ -36,9 +36,11 @@ interface LogEntry {
 }
 
 const SERVICE_META: Record<string, { name: string; host: string; color: string }> = {
-  yt_api:      { name: "YT-API by ytjar",                 host: "yt-api.p.rapidapi.com",                              color: "bg-red-600" },
-  yt_media_dl: { name: "YouTube Media Downloader",        host: "youtube-media-downloader.p.rapidapi.com",            color: "bg-orange-600" },
-  ytstream:    { name: "YTStream by ytjar",               host: "ytstream-download-youtube-videos.p.rapidapi.com",    color: "bg-yellow-600" },
+  yt_api:        { name: "YT-API by ytjar",                   host: "yt-api.p.rapidapi.com",                                                     color: "bg-red-600" },
+  yt_media_dl:   { name: "YouTube Media Downloader",          host: "youtube-media-downloader.p.rapidapi.com",                                   color: "bg-orange-600" },
+  ytstream:      { name: "YTStream by ytjar",                 host: "ytstream-download-youtube-videos.p.rapidapi.com",                           color: "bg-yellow-600" },
+  ig_downloader: { name: "Instagram Downloader (recommended)", host: "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",   color: "bg-pink-600" },
+  ig_social:     { name: "Social Media Video Downloader",     host: "social-media-video-downloader.p.rapidapi.com",                              color: "bg-purple-600" },
 };
 
 const SERVICE_OPTIONS = Object.keys(SERVICE_META);
