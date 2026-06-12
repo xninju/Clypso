@@ -103,11 +103,12 @@ export async function POST(req: Request) {
         const items = parseIgResult(result, postType);
         if (items.length) {
           const isCarousel = items.length > 1;
+          const firstItem = items[0] as Record<string, unknown>;
           return NextResponse.json({
             type: isCarousel ? "carousel" : "single",
             post_type: postType,
             title: result.title || result.caption || "Instagram Post",
-            thumbnail: items[0]?.thumbnail || null,
+            thumbnail: (firstItem?.thumbnail as string) || null,
             item_count: items.length,
             items,
           });
