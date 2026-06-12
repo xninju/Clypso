@@ -4,8 +4,6 @@ import axios from "axios";
 import { Download, Search, X, Image, Video, Film, Grid } from "lucide-react";
 import { IgInfoSkeleton } from "./Skeleton";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL;
-
 interface MediaItem {
   media_type: "video" | "image";
   url: string;
@@ -38,15 +36,11 @@ export default function InstagramDownloader() {
 
   const handleFetch = async () => {
     if (!url.trim()) return;
-    if (!API) {
-      setError("Backend URL is not configured.");
-      return;
-    }
     setLoading(true);
     setError("");
     setInfo(null);
     try {
-      const res = await axios.post(`${API}/instagram/info`, { url }, { timeout: 45000 });
+      const res = await axios.post(`/api/instagram/info`, { url }, { timeout: 45000 });
       setInfo(res.data);
     } catch (e: any) {
       setError(

@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import { VideoInfoSkeleton } from "./Skeleton";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL;
-
 interface Format {
   format_id: string;
   label: string;
@@ -62,15 +60,11 @@ export default function YoutubeDownloader() {
 
   const handleFetch = async () => {
     if (!url.trim()) return;
-    if (!API) {
-      setError("Backend URL is not configured.");
-      return;
-    }
     setLoading(true);
     setError("");
     setInfo(null);
     try {
-      const res = await axios.post(`${API}/youtube/info`, { url }, { timeout: 45000 });
+      const res = await axios.post(`/api/youtube/info`, { url }, { timeout: 45000 });
       setInfo(res.data);
     } catch (e: any) {
       setError(e?.response?.data?.detail || "Failed to fetch video info. Check the URL and try again.");
@@ -93,7 +87,7 @@ export default function YoutubeDownloader() {
     if (videoFormats[video.id]) return;
     setLoadingFormats(video.id);
     try {
-      const res = await axios.post(`${API}/youtube/playlist-video`, { url: video.url }, { timeout: 45000 });
+      const res = await axios.post(`/api/youtube/playlist-video`, { url: video.url }, { timeout: 45000 });
       setVideoFormats((prev) => ({ ...prev, [video.id]: res.data.formats }));
     } catch {}
     setLoadingFormats(null);
