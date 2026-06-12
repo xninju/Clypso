@@ -63,9 +63,7 @@ export default function Home() {
         <header className="border-b border-[#3a3a3a] bg-[#0f0f0f] sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#ff0000] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">C</span>
-              </div>
+              <img src="/logo.svg" alt="Clypso" className="w-7 h-7" />
               <span className="font-semibold text-[#f1f1f1] text-sm">Clypso</span>
             </div>
             <p className="text-xs text-[#717171]">Free · No login · No watermark</p>
