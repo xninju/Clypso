@@ -11,6 +11,21 @@ app = FastAPI(title="Clypso API", version="1.0.0")
 @app.on_event("startup")
 async def startup_event():
     init_cookies()
+    # Pre-connect to DB so first request isn't slow
+    try:
+        from utils.db import get_pool
+        await get_pool()
+    except Exception:
+        pass
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    try:
+        from utils.db import close_pool
+        await close_pool()
+    except Exception:
+        pass
 
 
 default_origins = [
@@ -29,7 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(yt_router, prefix="/youtube", tags=["YouTube"])
+app.include_router(yt_router, prefix="/youtube",   tags=["YouTube"])
 app.include_router(ig_router, prefix="/instagram", tags=["Instagram"])
 
 

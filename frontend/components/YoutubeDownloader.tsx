@@ -2,17 +2,10 @@
 import { useState } from "react";
 import axios from "axios";
 import {
-  Download,
-  Search,
-  X,
-  List,
-  Film,
-  Zap,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Eye,
+  Download, Search, X, List, Film, Zap,
+  ChevronDown, ChevronUp, Clock, Eye,
 } from "lucide-react";
+import { VideoInfoSkeleton } from "./Skeleton";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -70,15 +63,14 @@ export default function YoutubeDownloader() {
   const handleFetch = async () => {
     if (!url.trim()) return;
     if (!API) {
-      setError("Backend URL is not configured. Please set NEXT_PUBLIC_BACKEND_URL.");
+      setError("Backend URL is not configured.");
       return;
     }
     setLoading(true);
     setError("");
     setInfo(null);
-
     try {
-      const res = await axios.post(`${API}/youtube/info`, { url }, { timeout: 30000 });
+      const res = await axios.post(`${API}/youtube/info`, { url }, { timeout: 45000 });
       setInfo(res.data);
     } catch (e: any) {
       setError(e?.response?.data?.detail || "Failed to fetch video info. Check the URL and try again.");
@@ -87,12 +79,12 @@ export default function YoutubeDownloader() {
     }
   };
 
-  const logDownload = async (platform: string, url: string, media_type: string) => {
+  const logDownload = async (platform: string, dlUrl: string, media_type: string) => {
     try {
       await fetch("/api/log-download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, url, media_type }),
+        body: JSON.stringify({ platform, url: dlUrl, media_type }),
       });
     } catch {}
   };
@@ -101,7 +93,7 @@ export default function YoutubeDownloader() {
     if (videoFormats[video.id]) return;
     setLoadingFormats(video.id);
     try {
-      const res = await axios.post(`${API}/youtube/playlist-video`, { url: video.url });
+      const res = await axios.post(`${API}/youtube/playlist-video`, { url: video.url }, { timeout: 45000 });
       setVideoFormats((prev) => ({ ...prev, [video.id]: res.data.formats }));
     } catch {}
     setLoadingFormats(null);
@@ -119,11 +111,7 @@ export default function YoutubeDownloader() {
     document.body.removeChild(a);
   };
 
-  const clear = () => {
-    setUrl("");
-    setInfo(null);
-    setError("");
-  };
+  const clear = () => { setUrl(""); setInfo(null); setError(""); };
 
   return (
     <div>
@@ -139,10 +127,7 @@ export default function YoutubeDownloader() {
             className="input-url w-full bg-[#212121] border border-[#3a3a3a] rounded-xl px-4 py-3 text-sm text-[#f1f1f1] placeholder-[#717171] pr-10"
           />
           {url && (
-            <button
-              onClick={clear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#717171] hover:text-[#f1f1f1]"
-            >
+            <button onClick={clear} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#717171] hover:text-[#f1f1f1]">
               <X size={16} />
             </button>
           )}
@@ -152,11 +137,7 @@ export default function YoutubeDownloader() {
           disabled={loading || !url.trim()}
           className="bg-[#ff0000] hover:bg-[#cc0000] disabled:bg-[#3a3a3a] disabled:text-[#717171] text-white font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
         >
-          {loading ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Search size={16} />
-          )}
+          {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Search size={16} />}
           {loading ? "Fetching..." : "Fetch"}
         </button>
       </div>
@@ -168,19 +149,18 @@ export default function YoutubeDownloader() {
         </div>
       )}
 
+      {/* Skeleton while loading */}
+      {loading && <VideoInfoSkeleton />}
+
       {/* Result */}
-      {info && (
+      {!loading && info && (
         <div className="mt-5 animate-fade-in">
           {/* Single video / short */}
           {(info.type === "video" || info.type === "short") && (
             <div className="bg-[#212121] rounded-xl overflow-hidden border border-[#3a3a3a]">
               <div className="flex gap-4 p-4">
                 {info.thumbnail && (
-                  <img
-                    src={info.thumbnail}
-                    alt={info.title}
-                    className="w-36 h-20 object-cover rounded-lg flex-shrink-0"
-                  />
+                  <img src={info.thumbnail} alt={info.title} className="w-36 h-20 object-cover rounded-lg flex-shrink-0" />
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -198,20 +178,14 @@ export default function YoutubeDownloader() {
                   <p className="text-xs text-[#aaa] mt-1">{info.channel}</p>
                   <div className="flex gap-3 mt-1 text-xs text-[#717171]">
                     {info.duration && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={11} /> {formatDuration(info.duration)}
-                      </span>
+                      <span className="flex items-center gap-1"><Clock size={11} /> {formatDuration(info.duration)}</span>
                     )}
                     {info.view_count && (
-                      <span className="flex items-center gap-1">
-                        <Eye size={11} /> {formatViews(info.view_count)}
-                      </span>
+                      <span className="flex items-center gap-1"><Eye size={11} /> {formatViews(info.view_count)}</span>
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* Format buttons */}
               {info.formats && info.formats.length > 0 && (
                 <div className="px-4 pb-4">
                   <p className="text-xs text-[#717171] mb-2">Select quality to download</p>
@@ -225,9 +199,7 @@ export default function YoutubeDownloader() {
                         <Download size={13} className="text-[#ff0000]" />
                         <span className="font-medium">{fmt.label}</span>
                         <span className="text-xs text-[#717171]">{fmt.ext.toUpperCase()}</span>
-                        {fmt.filesize !== "Unknown" && (
-                          <span className="text-xs text-[#555]">{fmt.filesize}</span>
-                        )}
+                        {fmt.filesize !== "Unknown" && <span className="text-xs text-[#555]">{fmt.filesize}</span>}
                       </button>
                     ))}
                   </div>
@@ -241,11 +213,7 @@ export default function YoutubeDownloader() {
             <div className="bg-[#212121] rounded-xl border border-[#3a3a3a] overflow-hidden">
               <div className="p-4 flex items-center gap-4">
                 {info.thumbnail && (
-                  <img
-                    src={info.thumbnail}
-                    alt={info.title}
-                    className="w-28 h-16 object-cover rounded-lg flex-shrink-0"
-                  />
+                  <img src={info.thumbnail} alt={info.title} className="w-28 h-16 object-cover rounded-lg flex-shrink-0" />
                 )}
                 <div>
                   <span className="bg-[#2a2a2a] text-[#aaa] text-xs px-2 py-0.5 rounded-full flex items-center gap-1 w-fit mb-2">
@@ -262,9 +230,7 @@ export default function YoutubeDownloader() {
                   onClick={() => setPlaylistExpanded(!playlistExpanded)}
                   className="w-full px-4 py-3 flex items-center justify-between text-sm text-[#aaa] hover:text-[#f1f1f1] hover:bg-[#2a2a2a] transition-colors"
                 >
-                  <span>
-                    {playlistExpanded ? "Hide" : "Show"} {info.videos?.length} videos
-                  </span>
+                  <span>{playlistExpanded ? "Hide" : "Show"} {info.videos?.length} videos</span>
                   {playlistExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
 
@@ -274,16 +240,10 @@ export default function YoutubeDownloader() {
                       <div key={video.id} className="p-3 hover:bg-[#2a2a2a] transition-colors">
                         <div className="flex gap-3 items-start">
                           <span className="text-xs text-[#717171] w-5 flex-shrink-0 pt-1">{i + 1}</span>
-                          <img
-                            src={video.thumbnail}
-                            alt={video.title}
-                            className="w-20 h-11 object-cover rounded flex-shrink-0"
-                          />
+                          <img src={video.thumbnail} alt={video.title} className="w-20 h-11 object-cover rounded flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-[#f1f1f1] line-clamp-2">{video.title}</p>
-                            {video.duration && (
-                              <p className="text-xs text-[#717171] mt-0.5">{formatDuration(video.duration)}</p>
-                            )}
+                            {video.duration && <p className="text-xs text-[#717171] mt-0.5">{formatDuration(video.duration)}</p>}
                           </div>
                           <button
                             onClick={() => fetchVideoFormats(video)}
@@ -297,7 +257,6 @@ export default function YoutubeDownloader() {
                             Get
                           </button>
                         </div>
-
                         {videoFormats[video.id] && (
                           <div className="mt-2 ml-8 flex flex-wrap gap-1.5">
                             {videoFormats[video.id].map((fmt) => (

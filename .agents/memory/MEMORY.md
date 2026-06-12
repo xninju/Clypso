@@ -1,0 +1,4 @@
+- [RapidAPI cascade](rapidapi-cascade.md) — 3-API YouTube cascade (yt_api → yt_media_dl → ytstream) reads keys from Neon DB with env var fallback; cache TTL 60s.
+- [Admin dashboard](admin-dashboard.md) — PIN auth via ADMIN_PIN env var; PIN sent as X-Admin-Pin header; stored in sessionStorage; full key CRUD at /admin.
+- [Instagram audio fix](instagram-audio.md) — Prefer combined (vcodec+acodec != none) formats over video-only DASH streams in _pick_best_media.
+- [Proxy support](proxy-support.md) — Set PROXY_URL env var for yt-dlp to route through WARP/SOCKS5/HTTP proxy; no daemon needed in app code.

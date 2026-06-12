@@ -2,13 +2,13 @@ import yt_dlp
 import tempfile
 import os
 import random
+import shutil
 from typing import Optional
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15",
 ]
@@ -17,7 +17,7 @@ _cookies_file: Optional[str] = None
 
 
 def init_cookies() -> None:
-    """Called once at startup — write COOKIES_CONTENT env var to a temp file."""
+    """Called once at startup — load cookies from env var or local file."""
     global _cookies_file
 
     # 1. Env var takes priority (Render / production)
@@ -29,18 +29,17 @@ def init_cookies() -> None:
         tmp.write(content)
         tmp.close()
         _cookies_file = tmp.name
-        print(f"[cookies] Loaded from COOKIES_CONTENT env var → {_cookies_file}")
+        print(f"[cookies] Loaded from COOKIES_CONTENT → {_cookies_file}")
         return
 
-    # 2. Local cookies.txt next to this repo (dev / local setup_cookies.py)
-    local_path = os.path.join(os.path.dirname(__file__), "..", "cookies.txt")
-    local_path = os.path.abspath(local_path)
+    # 2. Local cookies.txt in repo root (dev — created by setup_cookies.py)
+    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "cookies.txt"))
     if os.path.exists(local_path):
         _cookies_file = local_path
         print(f"[cookies] Loaded from local file → {_cookies_file}")
         return
 
-    # 3. Docker path
+    # 3. Docker / Render mount path
     if os.path.exists("/app/cookies.txt"):
         _cookies_file = "/app/cookies.txt"
         print("[cookies] Loaded from /app/cookies.txt")
@@ -50,54 +49,47 @@ def init_cookies() -> None:
 
 
 def _find_node() -> Optional[str]:
-    """Return the Node.js executable path if available."""
-    import shutil
-    import subprocess
-
-    # 1. Explicit env var
-    node_path = os.getenv("NODE_PATH") or os.getenv("NODE_BINARY")
-    if node_path and os.path.isfile(node_path):
-        return node_path
-
-    # 2. ~/.local/bin/node (symlink we create during setup)
-    local_node = os.path.expanduser("~/.local/bin/node")
-    if os.path.isfile(local_node):
-        return local_node
-
-    # 3. System PATH
-    found = shutil.which("node")
-    if found:
-        return found
-
+    """Return path to Node.js executable for bgutil POT provider."""
+    for candidate in [
+        os.getenv("NODE_BINARY"),
+        os.getenv("NODE_PATH"),
+        os.path.expanduser("~/.local/bin/node"),
+        shutil.which("node"),
+    ]:
+        if candidate and os.path.isfile(candidate):
+            return candidate
     return None
 
 
 def get_ydl_opts(extract_flat: bool = False) -> dict:
-    opts = {
-        "quiet": False,
-        "no_warnings": False,
+    opts: dict = {
+        "quiet":        False,
+        "no_warnings":  False,
         "extract_flat": extract_flat,
         "socket_timeout": 30,
         "extractor_args": {
             "youtube": {
                 "player_client": ["web", "tv_embedded", "ios"],
-                "player_skip": [],
             }
         },
         "http_headers": {
-            "User-Agent": random.choice(USER_AGENTS),
+            "User-Agent":      random.choice(USER_AGENTS),
             "Accept-Language": "en-US,en;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
     }
 
     if _cookies_file and os.path.exists(_cookies_file):
         opts["cookiefile"] = _cookies_file
 
-    # Configure Node.js runtime path for bgutil POT provider
     node = _find_node()
     if node:
         opts["js_runtimes"] = {"node": node}
+
+    # Optional proxy (WARP, residential, or any SOCKS5/HTTP proxy)
+    proxy = os.getenv("PROXY_URL", "").strip()
+    if proxy:
+        opts["proxy"] = proxy
 
     return opts
 
@@ -120,16 +112,16 @@ def format_filesize(bytes_val: Optional[int]) -> str:
 
 
 def parse_formats(formats: list) -> list:
-    """Parse and clean up format list for video+audio options."""
-    seen = set()
+    """Filter yt-dlp formats to combined video+audio options only."""
+    seen: set[str] = set()
     result = []
 
     for f in formats:
-        height = f.get("height")
-        vcodec = f.get("vcodec", "none")
-        acodec = f.get("acodec", "none")
-        ext = f.get("ext", "mp4")
-        url = f.get("url")
+        height  = f.get("height")
+        vcodec  = f.get("vcodec", "none")
+        acodec  = f.get("acodec", "none")
+        ext     = f.get("ext", "mp4")
+        url     = f.get("url")
 
         if not url or vcodec == "none":
             continue
@@ -140,27 +132,28 @@ def parse_formats(formats: list) -> list:
                 seen.add(label)
                 result.append({
                     "format_id": f.get("format_id"),
-                    "label": label,
-                    "ext": ext,
-                    "filesize": format_filesize(f.get("filesize") or f.get("filesize_approx")),
-                    "url": url,
+                    "label":     label,
+                    "ext":       ext,
+                    "filesize":  format_filesize(f.get("filesize") or f.get("filesize_approx")),
+                    "url":       url,
                     "has_audio": True,
                 })
 
     result.sort(key=lambda x: int(x["label"].replace("p", "")), reverse=True)
 
+    # Fallback: any video format if no combined found
     if not result:
         for f in formats:
-            url = f.get("url")
+            url    = f.get("url")
             height = f.get("height")
             if url and height:
                 has_audio = f.get("acodec", "none") != "none"
                 result.append({
                     "format_id": f.get("format_id"),
-                    "label": f"{height}p",
-                    "ext": f.get("ext", "mp4"),
-                    "filesize": format_filesize(f.get("filesize")),
-                    "url": url,
+                    "label":     f"{height}p",
+                    "ext":       f.get("ext", "mp4"),
+                    "filesize":  format_filesize(f.get("filesize")),
+                    "url":       url,
                     "has_audio": has_audio,
                 })
                 break
