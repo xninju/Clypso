@@ -18,7 +18,7 @@ async function getKeys(): Promise<KeyRecord[]> {
   const keys: KeyRecord[] = [];
 
   try {
-    const rows = await prisma.apiKey.findMany({
+    const rows = await prisma.ytApiKey.findMany({
       where: { enabled: true },
       orderBy: [{ priority: "asc" }, { id: "asc" }],
     });
@@ -47,7 +47,7 @@ async function getKeys(): Promise<KeyRecord[]> {
 async function bumpCount(id: number | null) {
   if (!id) return;
   try {
-    await prisma.apiKey.update({ where: { id }, data: { req_count: { increment: 1 } } });
+    await prisma.ytApiKey.update({ where: { id }, data: { req_count: { increment: 1 } } });
   } catch {}
 }
 
@@ -248,10 +248,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo | null>
     if (!fn) continue;
     try {
       const result = await fn(videoId, rec.key);
-      if (result) {
-        bumpCount(rec.id);
-        return result;
-      }
+      if (result) { bumpCount(rec.id); return result; }
     } catch (e) {
       console.log(`[rapidapi] ${rec.service} failed: ${e}`);
     }
@@ -265,10 +262,7 @@ export async function fetchPlaylistInfo(playlistId: string): Promise<PlaylistInf
     if (!fn) continue;
     try {
       const result = await fn(playlistId, rec.key);
-      if (result) {
-        bumpCount(rec.id);
-        return result;
-      }
+      if (result) { bumpCount(rec.id); return result; }
     } catch (e) {
       console.log(`[rapidapi] ${rec.service} playlist failed: ${e}`);
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 interface KeyRecord {
+  id: number | null;
   service: string;
   key: string;
 }
@@ -16,21 +17,28 @@ async function getIgKeys(): Promise<KeyRecord[]> {
 
   const keys: KeyRecord[] = [];
   try {
-    const rows = await prisma.apiKey.findMany({
-      where: { enabled: true, service: { startsWith: "ig" } },
-      orderBy: [{ priority: "asc" }],
+    const rows = await prisma.igApiKey.findMany({
+      where: { enabled: true },
+      orderBy: [{ priority: "asc" }, { id: "asc" }],
     });
-    for (const r of rows) keys.push({ service: r.service, key: r.key });
+    for (const r of rows) keys.push({ id: r.id, service: r.service, key: r.key });
   } catch {}
 
   const envKey = process.env.RAPIDAPI_IG_KEY || "";
   if (envKey && !keys.find((k) => k.service === "ig_downloader")) {
-    keys.push({ service: "ig_downloader", key: envKey });
+    keys.push({ id: null, service: "ig_downloader", key: envKey });
   }
 
   _keyCache = keys;
   _keyCacheAt = now;
   return keys;
+}
+
+async function bumpCount(id: number | null) {
+  if (!id) return;
+  try {
+    await prisma.igApiKey.update({ where: { id }, data: { req_count: { increment: 1 } } });
+  } catch {}
 }
 
 function getPostType(url: string): string {
@@ -54,14 +62,13 @@ function fmtSize(size: unknown): string {
   return `${n.toFixed(1)} TB`;
 }
 
-async function tryIgDownloaderV3(url: string, key: string) {
+async function tryIgDownloader(url: string, key: string) {
   const r = await fetch(
     `https://instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com/get-info-rapidapi?url=${encodeURIComponent(url)}`,
     {
       headers: {
         "x-rapidapi-key": key,
-        "x-rapidapi-host":
-          "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
+        "x-rapidapi-host": "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
       },
       signal: AbortSignal.timeout(15000),
     }
@@ -70,7 +77,7 @@ async function tryIgDownloaderV3(url: string, key: string) {
   return r.json();
 }
 
-async function tryIgSocialDownloader(url: string, key: string) {
+async function tryIgSocial(url: string, key: string) {
   const r = await fetch(
     `https://social-media-video-downloader.p.rapidapi.com/smvd/get/all?url=${encodeURIComponent(url)}`,
     {
@@ -85,9 +92,24 @@ async function tryIgSocialDownloader(url: string, key: string) {
   return r.json();
 }
 
-function parseIgResult(data: Record<string, unknown>, postType: string) {
+async function tryIgAllInOne(url: string, key: string) {
+  const r = await fetch(
+    `https://all-in-one-social-media-downloader.p.rapidapi.com/v1?url=${encodeURIComponent(url)}`,
+    {
+      headers: {
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": "all-in-one-social-media-downloader.p.rapidapi.com",
+      },
+      signal: AbortSignal.timeout(15000),
+    }
+  );
+  if (!r.ok) return null;
+  return r.json();
+}
+
+function parseResult(data: Record<string, unknown>, postType: string) {
   const items: unknown[] = [];
-  const medias = (data.medias || data.media || data.links || []) as Record<string, unknown>[];
+  const medias = (data.medias || data.media || data.links || data.data || []) as Record<string, unknown>[];
 
   if (Array.isArray(medias) && medias.length) {
     for (const m of medias) {
@@ -106,7 +128,7 @@ function parseIgResult(data: Record<string, unknown>, postType: string) {
         filesize: fmtSize(m.size),
       });
     }
-    return items;
+    if (items.length) return items;
   }
 
   const videoUrl = (data.video_url || data.videoUrl || data.url) as string;
@@ -135,6 +157,12 @@ function parseIgResult(data: Record<string, unknown>, postType: string) {
   return items;
 }
 
+const SERVICE_HANDLERS: Record<string, (url: string, key: string) => Promise<Record<string, unknown> | null>> = {
+  ig_downloader: tryIgDownloader,
+  ig_social: tryIgSocial,
+  ig_allinone: tryIgAllInOne,
+};
+
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
@@ -148,30 +176,20 @@ export async function POST(req: Request) {
     }
 
     const keys = await getIgKeys();
-
     if (keys.length === 0) {
-      return NextResponse.json(
-        {
-          detail: "NO_API_KEY",
-        },
-        { status: 503 }
-      );
+      return NextResponse.json({ detail: "NO_API_KEY" }, { status: 503 });
     }
 
     for (const rec of keys) {
+      const handler = SERVICE_HANDLERS[rec.service];
+      if (!handler) continue;
       try {
-        let result: Record<string, unknown> | null = null;
-
-        if (rec.service === "ig_downloader" || rec.service === "ig_v3") {
-          result = await tryIgDownloaderV3(trimmed, rec.key);
-        } else if (rec.service === "ig_snapsave" || rec.service === "ig_social") {
-          result = await tryIgSocialDownloader(trimmed, rec.key);
-        }
-
+        const result = await handler(trimmed, rec.key);
         if (!result) continue;
 
-        const items = parseIgResult(result, postType);
+        const items = parseResult(result, postType);
         if (items.length) {
+          bumpCount(rec.id);
           const isCarousel = items.length > 1;
           const firstItem = items[0] as Record<string, unknown>;
           return NextResponse.json({

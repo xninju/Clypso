@@ -34,3 +34,27 @@ model ApiKey {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model YtApiKey {
+  id        Int      @id @default(autoincrement())
+  service   String
+  label     String   @default("")
+  key       String
+  enabled   Boolean  @default(true)
+  priority  Int      @default(1)
+  req_count Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IgApiKey {
+  id        Int      @id @default(autoincrement())
+  service   String
+  label     String   @default("")
+  key       String
+  enabled   Boolean  @default(true)
+  priority  Int      @default(1)
+  req_count Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

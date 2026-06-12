@@ -14,19 +14,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [stats, logs, keys] = await Promise.all([
+    const [stats, logs, ytKeys, igKeys] = await Promise.all([
       prisma.stats.findUnique({ where: { id: 1 } }),
-      prisma.downloadLog.findMany({
-        orderBy: { created_at: "desc" },
-        take: 50,
-      }),
-      prisma.apiKey.findMany({
-        orderBy: [{ priority: "asc" }, { id: "asc" }],
-      }),
+      prisma.downloadLog.findMany({ orderBy: { created_at: "desc" }, take: 50 }),
+      prisma.ytApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
+      prisma.igApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
     ]);
 
+    const keys = [
+      ...ytKeys.map((k) => ({ ...k, platform: "yt" as const })),
+      ...igKeys.map((k) => ({ ...k, platform: "ig" as const })),
+    ];
+
     return NextResponse.json({ stats, logs, keys });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
