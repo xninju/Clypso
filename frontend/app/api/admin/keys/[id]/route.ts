@@ -8,12 +8,13 @@ function verifyPin(req: Request): boolean {
   return pin === adminPin;
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!verifyPin(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const id = parseInt(params.id, 10);
+    const { id: rawId } = await params;
+    const id = parseInt(rawId, 10);
     const body = await req.json();
     const { service, label, key, priority, enabled } = body;
 
@@ -33,12 +34,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!verifyPin(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const id = parseInt(params.id, 10);
+    const { id: rawId } = await params;
+    const id = parseInt(rawId, 10);
     await prisma.apiKey.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
