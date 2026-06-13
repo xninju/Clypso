@@ -23,7 +23,7 @@ export default function StatsBar() {
     fetch("/api/stats")
       .then((r) => r.json())
       .then((data) => {
-        setStats(data);
+        if (typeof data?.total_visits === "number") setStats(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
