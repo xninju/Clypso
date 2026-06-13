@@ -38,24 +38,28 @@ function Thumb({ src, alt, className }: { src?: string; alt: string; className?:
 export default function TikTokDownloader({
   onUrlChange,
   initialUrl,
+  externalUrl,
 }: {
   onUrlChange?: (url: string) => void;
   initialUrl?: string;
+  externalUrl?: string;
 }) {
-  const [url, setUrl] = useState(initialUrl || "");
+  const controlled = !!externalUrl;
+  const [url, setUrl] = useState(externalUrl || initialUrl || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState<TtInfo | null>(null);
 
-  useEffect(() => { if (initialUrl) setUrl(initialUrl); }, [initialUrl]);
+  useEffect(() => { if (initialUrl && !controlled) setUrl(initialUrl); }, [initialUrl]);
 
-  const handleFetch = async () => {
-    if (!url.trim()) return;
+  const handleFetch = async (urlOverride?: string) => {
+    const target = urlOverride ?? url;
+    if (!target.trim()) return;
     setLoading(true);
     setError("");
     setInfo(null);
     try {
-      const res = await axios.post("/api/tiktok/info", { url }, { timeout: 30000 });
+      const res = await axios.post("/api/tiktok/info", { url: target }, { timeout: 30000 });
       setInfo(res.data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
@@ -65,6 +69,10 @@ export default function TikTokDownloader({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (externalUrl) handleFetch(externalUrl);
+  }, []);
 
   const logDownload = async () => {
     try {
@@ -98,6 +106,7 @@ export default function TikTokDownloader({
 
   return (
     <div>
+      {!controlled && (
       <div className="flex gap-2">
         <div className="relative flex-1">
           <input
@@ -115,7 +124,7 @@ export default function TikTokDownloader({
           )}
         </div>
         <button
-          onClick={handleFetch}
+          onClick={() => handleFetch()}
           disabled={loading || !url.trim()}
           className="disabled:bg-[#2a2a2a] disabled:text-[#555] text-white font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors hover:opacity-90"
           style={{ background: loading || !url.trim() ? undefined : `linear-gradient(135deg, ${TT_RED}, ${TT_TEAL})` }}
@@ -128,6 +137,7 @@ export default function TikTokDownloader({
           {loading ? "Fetching..." : "Fetch"}
         </button>
       </div>
+      )}
 
       {error && error !== "NO_API_KEY" && (
         <div className="mt-4 bg-[#2a1a1a] border border-[#5a2020] rounded-xl p-4 text-sm text-[#ff6b6b]">

@@ -62,21 +62,23 @@ function Thumb({
   );
 }
 
-export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrlChange?: (url: string) => void; initialUrl?: string }) {
-  const [url, setUrl]           = useState(initialUrl || "");
+export default function InstagramDownloader({ onUrlChange, initialUrl, externalUrl }: { onUrlChange?: (url: string) => void; initialUrl?: string; externalUrl?: string }) {
+  const controlled = !!externalUrl;
+  const [url, setUrl] = useState(externalUrl || initialUrl || "");
 
-  useEffect(() => { if (initialUrl) setUrl(initialUrl); }, [initialUrl]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [info, setInfo]         = useState<IgInfo | null>(null);
+  useEffect(() => { if (initialUrl && !controlled) setUrl(initialUrl); }, [initialUrl]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+  const [info, setInfo]       = useState<IgInfo | null>(null);
 
-  const handleFetch = async () => {
-    if (!url.trim()) return;
+  const handleFetch = async (urlOverride?: string) => {
+    const target = urlOverride ?? url;
+    if (!target.trim()) return;
     setLoading(true);
     setError("");
     setInfo(null);
     try {
-      const res = await axios.post(`/api/instagram/info`, { url }, { timeout: 45000 });
+      const res = await axios.post(`/api/instagram/info`, { url: target }, { timeout: 45000 });
       setInfo(res.data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
@@ -90,6 +92,10 @@ export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrl
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (externalUrl) handleFetch(externalUrl);
+  }, []);
 
   const logDownload = async (platform: string, dlUrl: string, media_type: string) => {
     try {
@@ -119,7 +125,8 @@ export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrl
 
   return (
     <div>
-      {/* URL Input */}
+      {/* URL Input — hidden when controlled externally */}
+      {!controlled && (
       <div className="flex gap-2">
         <div className="relative flex-1">
           <input
@@ -137,7 +144,7 @@ export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrl
           )}
         </div>
         <button
-          onClick={handleFetch}
+          onClick={() => handleFetch()}
           disabled={loading || !url.trim()}
           className="bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
         >
@@ -149,6 +156,7 @@ export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrl
           {loading ? "Fetching..." : "Fetch"}
         </button>
       </div>
+      )}
 
       {/* Error */}
       {error && error !== "NO_API_KEY" && (

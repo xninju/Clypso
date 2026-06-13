@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Youtube, Instagram, ChevronDown, ChevronUp, Zap, UserX, Tv2 } from "lucide-react";
+import { Youtube, Instagram, ChevronDown, ChevronUp, Zap, UserX, Tv2, Search, X } from "lucide-react";
 import YoutubeDownloader from "@/components/YoutubeDownloader";
 import InstagramDownloader from "@/components/InstagramDownloader";
 import FacebookDownloader from "@/components/FacebookDownloader";
@@ -15,17 +15,17 @@ type Platform = "youtube" | "instagram" | "tiktok" | "facebook";
 
 const faqs = [
   { q: "Is Clypso really free?", a: "Yes. Clypso is 100% free with no sign-up, no subscription, and no watermark added to your downloads." },
-  { q: "How do I download a YouTube video?", a: "Paste any YouTube video, Short, or playlist URL into the input and click Fetch. Choose your preferred quality and hit Download." },
-  { q: "How do I download an Instagram Reel or post?", a: "Paste the public Instagram post or Reel URL and click Fetch. Your media will be ready to download instantly." },
+  { q: "How do I download a YouTube video?", a: "Paste any YouTube video, Short, or playlist URL into the input and click Fetch." },
+  { q: "How do I download an Instagram Reel or post?", a: "Paste the public Instagram post or Reel URL and click Fetch. Your media will be ready instantly." },
   { q: "How do I download a TikTok video without watermark?", a: "Paste the TikTok video URL and click Fetch. Clypso returns the original no-watermark version plus the audio track." },
   { q: "How do I download a Facebook video?", a: "Paste a public Facebook video or reel URL and click Fetch. HD and SD versions are available where supported." },
   { q: "Which platforms are supported?", a: "YouTube (videos, Shorts, playlists), Instagram (posts, Reels, carousels), TikTok (no watermark + audio), and Facebook (public videos and reels)." },
   { q: "Can I download an entire YouTube playlist?", a: "Yes. Paste a YouTube playlist URL and Clypso will fetch all videos in it. You can download them individually." },
   { q: "What video quality is available?", a: "Clypso fetches the best available quality from the source, including HD and 4K where available on YouTube." },
-  { q: "Can I download private or login-only content?", a: "No. Clypso can only fetch publicly accessible content. Private or login-gated videos cannot be downloaded." },
+  { q: "Can I download private or login-only content?", a: "No. Clypso can only fetch publicly accessible content." },
   { q: "Do you store my downloads or track my URLs?", a: "No. Files stream directly from the source to your device. We do not store or cache your media files." },
-  { q: "Does it work on iPhone and Android?", a: "Yes. Clypso is fully responsive and works on iOS Safari, Android Chrome, tablet, and desktop browsers — no app install needed." },
-  { q: "Do I need to create an account?", a: "No account, no email, no password. Just paste a URL and download. It's that simple." },
+  { q: "Does it work on iPhone and Android?", a: "Yes. Clypso works on iOS Safari, Android Chrome, tablet, and desktop — no app install needed." },
+  { q: "Do I need to create an account?", a: "No account, no email, no password. Just paste a URL and download." },
 ];
 
 const jsonLd = [
@@ -37,10 +37,7 @@ const jsonLd = [
     description: "Free online downloader for YouTube, Instagram, TikTok, and Facebook videos. No login required, no watermark, HD quality.",
     applicationCategory: "MultimediaApplication",
     operatingSystem: "Any",
-    browserRequirements: "Requires JavaScript",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    featureList: ["Download YouTube videos in HD", "Download YouTube Shorts", "Download YouTube Playlists", "Download Instagram Reels", "Download TikTok videos without watermark", "Download Facebook videos", "No login required", "No watermark", "Free to use"],
-    screenshot: `${SITE_URL}/og-image.png`,
     aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", ratingCount: "1200", bestRating: "5", worstRating: "1" },
   },
   {
@@ -70,72 +67,6 @@ function FAQ({ q, a }: { q: string; a: string }) {
   );
 }
 
-/* ── Platform badge pills ── */
-function PlatformBadges({ active, onChange }: { active: Platform; onChange: (p: Platform) => void }) {
-  const platforms: { id: Platform; label: string; icon: React.ReactNode; activeStyle: React.CSSProperties; activeClass: string }[] = [
-    {
-      id: "youtube",
-      label: "YouTube",
-      icon: <Youtube size={14} />,
-      activeStyle: { backgroundColor: "#ff0000" },
-      activeClass: "text-white",
-    },
-    {
-      id: "instagram",
-      label: "Instagram",
-      icon: <Instagram size={14} />,
-      activeStyle: { background: "linear-gradient(135deg,#833ab4,#e1306c,#fcaf45)" },
-      activeClass: "text-white",
-    },
-    {
-      id: "tiktok",
-      label: "TikTok",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z" />
-        </svg>
-      ),
-      activeStyle: { background: "linear-gradient(135deg,#EE1D52,#69C9D0)" },
-      activeClass: "text-white",
-    },
-    {
-      id: "facebook",
-      label: "Facebook",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-        </svg>
-      ),
-      activeStyle: { backgroundColor: "#1877F2" },
-      activeClass: "text-white",
-    },
-  ];
-
-  return (
-    <div className="flex flex-wrap justify-center gap-2 mt-4">
-      {platforms.map((p) => {
-        const isActive = active === p.id;
-        return (
-          <button
-            key={p.id}
-            onClick={() => onChange(p.id)}
-            style={isActive ? p.activeStyle : {}}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
-              isActive
-                ? `${p.activeClass} border-transparent`
-                : "text-[#717171] border-[#3a3a3a] hover:border-[#555] hover:text-[#aaa] bg-transparent"
-            }`}
-          >
-            {p.icon}
-            {p.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── detect platform from URL ── */
 function detectPlatform(url: string): Platform | null {
   const v = url.trim().toLowerCase();
   if (v.includes("youtube.com") || v.includes("youtu.be")) return "youtube";
@@ -145,16 +76,64 @@ function detectPlatform(url: string): Platform | null {
   return null;
 }
 
-export default function Home() {
-  const [tab, setTab] = useState<Platform>("youtube");
-  const [transferUrl, setTransferUrl] = useState("");
+/* Decorative platform badges — purely visual, no interaction */
+function PlatformBadges() {
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mt-5">
+      {/* YouTube */}
+      <span
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white"
+        style={{ backgroundColor: "#ff0000" }}
+      >
+        <Youtube size={13} /> YouTube
+      </span>
+      {/* Instagram */}
+      <span
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white"
+        style={{ background: "linear-gradient(135deg,#833ab4,#e1306c,#fcaf45)" }}
+      >
+        <Instagram size={13} /> Instagram
+      </span>
+      {/* TikTok */}
+      <span
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white"
+        style={{ background: "linear-gradient(135deg,#EE1D52,#69C9D0)" }}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z" />
+        </svg>
+        TikTok
+      </span>
+      {/* Facebook */}
+      <span
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white"
+        style={{ backgroundColor: "#1877F2" }}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+        </svg>
+        Facebook
+      </span>
+    </div>
+  );
+}
 
-  const handleUrlChange = (url: string) => {
-    const detected = detectPlatform(url);
-    if (detected && detected !== tab) {
-      setTransferUrl(url);
-      setTab(detected);
-    }
+export default function Home() {
+  const [inputUrl, setInputUrl] = useState("");
+  const [fetchUrl, setFetchUrl]   = useState("");
+  const [platform, setPlatform]   = useState<Platform | null>(null);
+  const [fetchKey, setFetchKey]   = useState(0);
+  const [urlError, setUrlError]   = useState("");
+
+  const handleFetch = () => {
+    const trimmed = inputUrl.trim();
+    if (!trimmed) { setUrlError("Paste a video link first."); return; }
+    const detected = detectPlatform(trimmed);
+    if (!detected) { setUrlError("Link not recognised. Supported: YouTube, Instagram, TikTok, Facebook."); return; }
+    setUrlError("");
+    setPlatform(detected);
+    setFetchUrl(trimmed);
+    setFetchKey((k) => k + 1);
   };
 
   useEffect(() => {
@@ -204,29 +183,62 @@ export default function Home() {
           <section className="px-4 py-10 border-y border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
 
-              {tab === "youtube" && (
-                <YoutubeDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
-              )}
-              {tab === "instagram" && (
-                <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
-              )}
-              {tab === "tiktok" && (
-                <TikTokDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
-              )}
-              {tab === "facebook" && (
-                <FacebookDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
+              {/* Single unified URL bar */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={inputUrl}
+                    onChange={(e) => { setInputUrl(e.target.value); setUrlError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleFetch()}
+                    placeholder="Paste a YouTube, Instagram, TikTok or Facebook link…"
+                    className="w-full bg-[#212121] border border-[#3a3a3a] rounded-xl px-4 py-3 text-sm text-[#f1f1f1] placeholder-[#717171] pr-10 focus:outline-none focus:border-[#555]"
+                  />
+                  {inputUrl && (
+                    <button
+                      onClick={() => { setInputUrl(""); setUrlError(""); setPlatform(null); }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#717171] hover:text-[#f1f1f1]"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={handleFetch}
+                  disabled={!inputUrl.trim()}
+                  className="bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
+                >
+                  <Search size={15} />
+                  Fetch
+                </button>
+              </div>
+
+              {/* URL error */}
+              {urlError && (
+                <p className="mt-2 text-xs text-[#ff6b6b]">{urlError}</p>
               )}
 
-              {/* Platform badges */}
-              <PlatformBadges active={tab} onChange={(p) => { setTab(p); setTransferUrl(""); }} />
+              {/* Decorative platform badges — for visual only */}
+              <PlatformBadges />
 
               {/* Security note */}
-              <p className="text-center text-xs text-[#3d3d3d] mt-4">
+              <p className="text-center text-xs text-[#3d3d3d] mt-3">
                 <span className="inline-flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 flex-shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                   Metadata &amp; streams fetched in real-time via verified third-party extraction APIs. No files are stored on our servers.
                 </span>
               </p>
+
+              {/* Results — rendered below, component chosen by detected platform */}
+              {platform && fetchUrl && (
+                <div className="mt-6">
+                  {platform === "youtube"   && <YoutubeDownloader   key={`yt-${fetchKey}`}  externalUrl={fetchUrl} />}
+                  {platform === "instagram" && <InstagramDownloader key={`ig-${fetchKey}`}  externalUrl={fetchUrl} />}
+                  {platform === "tiktok"    && <TikTokDownloader    key={`tt-${fetchKey}`}  externalUrl={fetchUrl} />}
+                  {platform === "facebook"  && <FacebookDownloader  key={`fb-${fetchKey}`}  externalUrl={fetchUrl} />}
+                </div>
+              )}
+
             </div>
           </section>
 
