@@ -428,24 +428,69 @@ const PLAYLIST_FNS: Record<string, (id: string, key: string) => Promise<Playlist
   yt_media_dl: ytMediaPlaylist,
 };
 
-export async function fetchVideoInfo(videoId: string): Promise<VideoInfo | null> {
-  for (const rec of await getKeys()) {
-    const fn = VIDEO_FNS[rec.service];
-    if (!fn) continue;
-    try {
-      const result = await fn(videoId, rec.key);
-      if (result) {
-        bumpCount(rec.id);
-        return result;
+function mergeFormats(lists: FormatItem[][]): FormatItem[] {
+  const seen = new Set<string>();
+  const all: FormatItem[] = [];
+  for (const list of lists) {
+    for (const fmt of list) {
+      const key = `${fmt.label}|${fmt.has_audio}|${fmt.has_video}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        all.push(fmt);
       }
-    } catch (e) {
-      console.log(`[rapidapi] ${rec.service} failed: ${e}`);
     }
   }
-  return null;
+  return all.sort((a, b) => {
+    const rankA = a.has_video && a.has_audio ? 0 : a.has_video ? 1 : 2;
+    const rankB = b.has_video && b.has_audio ? 0 : b.has_video ? 1 : 2;
+    if (rankA !== rankB) return rankA - rankB;
+    return heightKey(b.label) - heightKey(a.label);
+  });
+}
+
+export async function fetchVideoInfo(videoId: string): Promise<VideoInfo | null> {
+  const keys = await getKeys();
+
+  // Deduplicate: one task per service (first key wins within a service)
+  const seen = new Set<string>();
+  const tasks: { rec: KeyRecord; fn: (id: string, key: string) => Promise<VideoInfo | null> }[] = [];
+  for (const rec of keys) {
+    const fn = VIDEO_FNS[rec.service];
+    if (!fn || seen.has(rec.service)) continue;
+    seen.add(rec.service);
+    tasks.push({ rec, fn });
+  }
+
+  // Fire all APIs in parallel — collect every result
+  const settled = await Promise.allSettled(
+    tasks.map(({ rec, fn }) =>
+      fn(videoId, rec.key)
+        .then((result) => ({ result, rec }))
+        .catch(() => ({ result: null, rec }))
+    )
+  );
+
+  let meta: Omit<VideoInfo, "formats"> | null = null;
+  const formatLists: FormatItem[][] = [];
+
+  for (const s of settled) {
+    if (s.status !== "fulfilled" || !s.value.result) continue;
+    const { result, rec } = s.value;
+    if (!meta) {
+      const { formats: _, ...rest } = result;
+      void _;
+      meta = rest;
+    }
+    bumpCount(rec.id);
+    formatLists.push(result.formats);
+  }
+
+  if (!meta || !formatLists.length) return null;
+  return { ...meta, formats: mergeFormats(formatLists) };
 }
 
 export async function fetchPlaylistInfo(playlistId: string): Promise<PlaylistInfo | null> {
+  // Playlists: cascade (parallel isn't worth it, we just need one)
   for (const rec of await getKeys()) {
     const fn = PLAYLIST_FNS[rec.service];
     if (!fn) continue;

@@ -71,15 +71,36 @@ const YT_SERVICES: Record<string, ServiceInfo> = {
 };
 
 const IG_SERVICES: Record<string, ServiceInfo> = {
+  ig_downloader: {
+    name: "Instagram Downloader (Videos/Stories)",
+    provider: "isholaomotayo",
+    host: "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
+    url: "https://rapidapi.com/isholaomotayo/api/instagram-downloader-download-instagram-videos-stories1",
+    free: "100 req/month",
+  },
+  ig_social: {
+    name: "Social Media Video Downloader",
+    provider: "ido2",
+    host: "social-media-video-downloader.p.rapidapi.com",
+    url: "https://rapidapi.com/ido2/api/social-media-video-downloader",
+    free: "~500 req/month",
+  },
+  ig_allinone: {
+    name: "All-in-One Social Downloader",
+    provider: "mwlang",
+    host: "all-in-one-social-media-downloader.p.rapidapi.com",
+    url: "https://rapidapi.com/mwlang/api/all-in-one-social-media-downloader",
+    free: "50 req/day",
+  },
   ig_diyorbek: {
-    name: "Instagram Post/Reels/Stories Downloader",
+    name: "Instagram Post/Reels Downloader (legacy)",
     provider: "diyorbekkanal",
     host: "instagram-post-reels-stories-downloader-api.p.rapidapi.com",
     url: "https://rapidapi.com/diyorbekkanal/api/instagram-post-reels-stories-downloader-api",
     free: "100 req/month",
   },
   ig_safesite: {
-    name: "Instagram Downloader (Stories/Videos)",
+    name: "Instagram Stories/Videos Downloader (legacy)",
     provider: "safesite15",
     host: "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
     url: "https://rapidapi.com/safesite15/api/instagram-downloader-download-instagram-stories-videos4",
