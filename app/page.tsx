@@ -4,6 +4,7 @@ import { Youtube, Instagram, ChevronDown, ChevronUp, Zap, UserX, Tv2 } from "luc
 import YoutubeDownloader from "@/components/YoutubeDownloader";
 import InstagramDownloader from "@/components/InstagramDownloader";
 import StatsBar from "@/components/StatsBar";
+import FeedbackSection from "@/components/FeedbackSection";
 import Script from "next/script";
 
 type Tab = "youtube" | "instagram";
@@ -273,6 +274,9 @@ export default function Home() {
 
           {/* ── Stats ── */}
           <StatsBar />
+
+          {/* ── Feedback ── */}
+          <FeedbackSection />
 
           {/* ── FAQ ── */}
           <section className="py-16 px-4 bg-[#0f0f0f] border-t border-[#2a2a2a]">

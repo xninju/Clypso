@@ -4,7 +4,7 @@ import {
   Key, BarChart2, List, LogOut, Plus, Trash2,
   Edit3, Check, X, Eye, EyeOff, RefreshCw,
   Youtube, Instagram, Globe, Download, Shield,
-  ExternalLink, ChevronUp, ChevronDown,
+  ExternalLink, ChevronUp, ChevronDown, MessageSquare, Star,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -706,9 +706,119 @@ function LogsTab({ pin }: { pin: string }) {
   );
 }
 
+// ─── Feedback Tab ─────────────────────────────────────────────────────────────
+
+interface FeedbackEntry {
+  id: number;
+  name: string;
+  email: string;
+  rating: number;
+  message: string;
+  created_at: string;
+}
+
+function FeedbackTab({ pin }: { pin: string }) {
+  const [items, setItems] = useState<FeedbackEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch("/api/admin/feedback", { headers: { "x-admin-pin": pin } });
+      const d = await r.json();
+      setItems(d.feedbacks || []);
+    } catch {}
+    setLoading(false);
+  }, [pin]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id: number) => {
+    if (!confirm("Delete this feedback?")) return;
+    await fetch("/api/admin/feedback", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({ id }),
+    });
+    setItems((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const avg = items.length ? (items.reduce((s, f) => s + f.rating, 0) / items.length).toFixed(1) : "—";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-[#f1f1f1]">
+            User Feedback <span className="text-[#555] font-normal">({items.length})</span>
+          </h2>
+          {items.length > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              <Star size={13} fill="#ff0000" stroke="#ff0000" />
+              <span className="text-sm font-bold text-[#f1f1f1]">{avg}</span>
+              <span className="text-xs text-[#555]">avg rating</span>
+            </div>
+          )}
+        </div>
+        <button onClick={load} className="text-[#717171] hover:text-[#f1f1f1] p-2 rounded-lg hover:bg-[#2a2a2a] transition-colors">
+          <RefreshCw size={15} />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl h-24 animate-pulse" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-10 text-center text-[#555] text-sm">
+          No feedback yet. Check back after users submit the form.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((f) => (
+            <div key={f.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap mb-2">
+                    <span className="text-sm font-semibold text-[#f1f1f1]">{f.name}</span>
+                    {f.email && (
+                      <span className="text-xs text-[#555] font-mono truncate max-w-[200px]">{f.email}</span>
+                    )}
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={13}
+                          fill={f.rating >= s ? "#ff0000" : "none"}
+                          stroke={f.rating >= s ? "#ff0000" : "#3a3a3a"}
+                          strokeWidth={1.5}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-[#555]">{timeAgo(f.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-[#aaa] leading-relaxed whitespace-pre-wrap">{f.message}</p>
+                </div>
+                <button
+                  onClick={() => remove(f.id)}
+                  className="flex-shrink-0 p-1.5 text-[#555] hover:text-[#ff6b6b] rounded hover:bg-[#2a2a2a] transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Page ───────────────────────────────────────────────────────────
 
-type AdminTab = "overview" | "keys" | "logs";
+type AdminTab = "overview" | "keys" | "logs" | "feedback";
 
 export default function AdminPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -742,9 +852,10 @@ export default function AdminPage() {
   if (!pin) return <PinGate onAuth={(p) => setPin(p)} />;
 
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
-    { id: "overview", label: "Overview", icon: <BarChart2 size={15} /> },
-    { id: "keys",     label: "API Keys", icon: <Key size={15} /> },
-    { id: "logs",     label: "Logs",     icon: <List size={15} /> },
+    { id: "overview",  label: "Overview", icon: <BarChart2 size={15} /> },
+    { id: "keys",      label: "API Keys", icon: <Key size={15} /> },
+    { id: "logs",      label: "Logs",     icon: <List size={15} /> },
+    { id: "feedback",  label: "Feedback", icon: <MessageSquare size={15} /> },
   ];
 
   return (
@@ -785,9 +896,10 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {tab === "overview" && <OverviewTab stats={stats} keys={keys} />}
-        {tab === "keys"     && <KeysTab pin={pin} />}
-        {tab === "logs"     && <LogsTab pin={pin} />}
+        {tab === "overview"  && <OverviewTab stats={stats} keys={keys} />}
+        {tab === "keys"      && <KeysTab pin={pin} />}
+        {tab === "logs"      && <LogsTab pin={pin} />}
+        {tab === "feedback"  && <FeedbackTab pin={pin} />}
       </main>
     </div>
   );
