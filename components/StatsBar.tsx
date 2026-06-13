@@ -41,28 +41,32 @@ export default function StatsBar() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               {
-                icon: <Globe size={16} className="text-[#aaa]" />,
+                icon: <Globe size={16} className="text-[#717171]" />,
                 label: "Total Visits",
                 value: stats ? formatNumber(stats.total_visits) : "—",
+                accent: "text-[#717171]",
               },
               {
-                icon: <Youtube size={16} className="text-[#aaa]" />,
+                icon: <Youtube size={16} className="text-[#ff0000]" />,
                 label: "YouTube Downloads",
                 value: stats ? formatNumber(stats.yt_downloads) : "—",
+                accent: "text-[#ff0000]",
               },
               {
-                icon: <Instagram size={16} className="text-[#aaa]" />,
+                icon: <Instagram size={16} style={{ color: "#e1306c" }} />,
                 label: "Instagram Downloads",
                 value: stats ? formatNumber(stats.ig_downloads) : "—",
+                accent: "text-[#e1306c]",
               },
               {
-                icon: <Download size={16} className="text-[#aaa]" />,
+                icon: <Download size={16} className="text-[#f1f1f1]" />,
                 label: "Total Downloads",
                 value: stats ? formatNumber(total) : "—",
+                accent: "text-[#f1f1f1]",
               },
             ].map((item) => (
               <div key={item.label} className="stat-card rounded-xl p-4 flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-[#aaa] text-xs">
+                <div className={`flex items-center gap-1.5 text-xs ${item.accent}`}>
                   {item.icon}
                   <span>{item.label}</span>
                 </div>
