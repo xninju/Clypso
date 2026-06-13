@@ -107,13 +107,7 @@ const TT_SERVICES: Record<string, ServiceInfo> = {
     url: "https://rapidapi.com/7scorp-7scorp-default/api/tiktok-downloader-download-tiktok-videos-without-watermark",
     free: "Free tier · 9.9 rating",
   },
-  tt_thucngv: {
-    name: "TikTok Video Downloader",
-    provider: "thucngv",
-    host: "tiktok-video-downloader.p.rapidapi.com",
-    url: "https://rapidapi.com/thucngv/api/tiktok-video-downloader",
-    free: "Free tier",
-  },
+
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

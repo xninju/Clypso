@@ -57,27 +57,6 @@ async function try7scorp(url: string, key: string): Promise<Record<string, unkno
   }
 }
 
-async function tryThucngv(url: string, key: string): Promise<Record<string, unknown> | null> {
-  try {
-    const r = await fetch(
-      `https://tiktok-video-downloader.p.rapidapi.com/media?url=${encodeURIComponent(url)}`,
-      {
-        headers: {
-          "x-rapidapi-key": key,
-          "x-rapidapi-host": "tiktok-video-downloader.p.rapidapi.com",
-        },
-        signal: AbortSignal.timeout(15000),
-      }
-    );
-    if (!r.ok) return null;
-    const d = await r.json();
-    if (!d || typeof d !== "object") return null;
-    return d as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
 interface TtResult {
   title: string;
   thumbnail: string;
@@ -99,20 +78,6 @@ function parse7scorp(data: Record<string, unknown>): TtResult | null {
   };
 }
 
-function parseThucngv(data: Record<string, unknown>): TtResult | null {
-  const play = (data.play as string) || (data.video as string);
-  if (!play) return null;
-  const items: TtResult["items"] = [{ url: play, quality: "No Watermark", ext: "mp4", filesize: "Unknown", type: "video" }];
-  const music = (data.music as string) || (data.audio as string);
-  if (music) items.push({ url: music, quality: "Audio", ext: "mp3", filesize: "Unknown", type: "audio" });
-  return {
-    title: (data.title as string) || (data.desc as string) || "TikTok Video",
-    thumbnail: (data.cover as string) || (data.thumbnail as string) || "",
-    author: (data.author as string) || "",
-    items,
-  };
-}
-
 const SERVICE_HANDLERS: Record<
   string,
   {
@@ -120,8 +85,7 @@ const SERVICE_HANDLERS: Record<
     parse: (data: Record<string, unknown>) => TtResult | null;
   }
 > = {
-  tt_7scorp:  { fetch: try7scorp,   parse: parse7scorp  },
-  tt_thucngv: { fetch: tryThucngv,  parse: parseThucngv },
+  tt_7scorp: { fetch: try7scorp, parse: parse7scorp },
 };
 
 export async function POST(req: Request) {

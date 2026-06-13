@@ -143,7 +143,7 @@ export default function TikTokDownloader({
           </p>
           <ol className="text-xs text-[#555] space-y-1 mb-3 list-decimal list-inside">
             <li>Sign up free at <span style={{ color: TT_TEAL }}>rapidapi.com</span></li>
-            <li>Search &quot;TikTok Downloader&quot; by 7scorp or thucngv → subscribe (free tier)</li>
+            <li>Search &quot;TikTok Downloader - Download TikTok Videos without watermark&quot; by 7scorp → subscribe (free tier)</li>
             <li>Copy your API key and add it in the Admin panel</li>
           </ol>
           <a
