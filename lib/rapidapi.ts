@@ -84,6 +84,7 @@ export interface FormatItem {
   url: string;
   has_audio: boolean;
   has_video: boolean;
+  audio_url?: string;
 }
 
 function parseYtApiFormats(data: Record<string, unknown>): FormatItem[] {
@@ -146,6 +147,16 @@ function parseYtApiFormats(data: Record<string, unknown>): FormatItem[] {
         has_audio: true,
         has_video: false,
       });
+    }
+  }
+
+  // Attach best audio URL to every video-only format so the merge endpoint can combine them
+  const bestAudio =
+    formats.find((f) => f.has_audio && !f.has_video && f.ext === "m4a") ||
+    formats.find((f) => f.has_audio && !f.has_video);
+  if (bestAudio) {
+    for (const f of formats) {
+      if (f.has_video && !f.has_audio) f.audio_url = bestAudio.url;
     }
   }
 
@@ -229,6 +240,16 @@ function parseYtMediaFormats(data: Record<string, unknown>): FormatItem[] {
       has_audio: true,
       has_video: false,
     });
+  }
+
+  // Attach best audio URL to every video-only format
+  const bestAudioMedia =
+    formats.find((f) => f.has_audio && !f.has_video && f.ext === "m4a") ||
+    formats.find((f) => f.has_audio && !f.has_video);
+  if (bestAudioMedia) {
+    for (const f of formats) {
+      if (f.has_video && !f.has_audio) f.audio_url = bestAudioMedia.url;
+    }
   }
 
   return formats.sort((a, b) => {

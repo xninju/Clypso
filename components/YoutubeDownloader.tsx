@@ -4,11 +4,11 @@ import axios from "axios";
 import {
   Download, Search, X, List, Film, Zap,
   ChevronDown, ChevronUp, Clock, Eye,
-  Volume2, VideoIcon, Combine,
+  Volume2, VideoIcon, VolumeX,
 } from "lucide-react";
 import { VideoInfoSkeleton } from "./Skeleton";
 
-type FormatMode = "combined" | "video" | "audio";
+type FormatMode = "video" | "audio";
 
 interface Format {
   format_id: string;
@@ -18,6 +18,7 @@ interface Format {
   url: string;
   has_audio: boolean;
   has_video: boolean;
+  audio_url?: string;
 }
 
 interface VideoInfo {
@@ -55,9 +56,13 @@ function formatViews(n?: number) {
 }
 
 function filterFormats(formats: Format[], mode: FormatMode): Format[] {
-  if (mode === "combined") return formats.filter((f) => f.has_audio && f.has_video);
-  if (mode === "video")    return formats.filter((f) => f.has_video && !f.has_audio);
-  if (mode === "audio")    return formats.filter((f) => f.has_audio && !f.has_video);
+  if (mode === "video") {
+    // Show all video formats: combined (already has audio) first, then video-only (merged server-side)
+    const combined = formats.filter((f) => f.has_video && f.has_audio);
+    const videoOnly = formats.filter((f) => f.has_video && !f.has_audio);
+    return [...combined, ...videoOnly];
+  }
+  if (mode === "audio") return formats.filter((f) => f.has_audio && !f.has_video);
   return [];
 }
 
@@ -69,15 +74,13 @@ function FormatModeToggle({
   formats: Format[];
 }) {
   const counts = {
-    combined: formats.filter((f) => f.has_audio && f.has_video).length,
-    video:    formats.filter((f) => f.has_video && !f.has_audio).length,
-    audio:    formats.filter((f) => f.has_audio && !f.has_video).length,
+    video: formats.filter((f) => f.has_video).length,
+    audio: formats.filter((f) => f.has_audio && !f.has_video).length,
   };
 
   const options: { id: FormatMode; label: string; sublabel: string; icon: React.ReactNode }[] = [
-    { id: "video",    label: "Video",          sublabel: "HD, no audio",    icon: <VideoIcon size={12} /> },
-    { id: "combined", label: "Video + Audio",  sublabel: "max 360p",        icon: <Combine size={12} /> },
-    { id: "audio",    label: "Audio only",     sublabel: "m4a",             icon: <Volume2 size={12} /> },
+    { id: "video", label: "Video",      sublabel: "with audio", icon: <VideoIcon size={12} /> },
+    { id: "audio", label: "Audio only", sublabel: "m4a",        icon: <Volume2 size={12} /> },
   ];
 
   return (
@@ -118,30 +121,55 @@ function FormatButtons({
   if (visible.length === 0) {
     return (
       <p className="text-xs text-[#555] py-2">
-        {mode === "combined"
-          ? "No combined Video+Audio format available for this video. YouTube only provides 360p as a single file — use Video tab for HD, Audio tab for sound."
-          : `No ${mode}-only formats available for this video.`}
+        No {mode === "audio" ? "audio" : "video"} formats available for this video.
       </p>
     );
   }
 
   return (
+    <>
+    {mode === "video" && visible.some((f) => f.has_video && !f.has_audio) && (
+      <p className="text-[11px] text-[#555] mb-2">
+        <VolumeX size={11} className="inline mr-1 text-[#444]" />
+        HD formats (720p+) are video only — YouTube doesn&apos;t provide HD with embedded audio.
+        Download <span className="text-[#aaa]">Audio only</span> separately to combine later.
+      </p>
+    )}
     <div className="flex flex-wrap gap-2">
-      {visible.map((fmt) => (
-        <button
-          key={fmt.format_id}
-          onClick={() => onDownload(fmt)}
-          className="format-btn bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#ff0000] rounded-lg px-3 py-2 flex items-center gap-2 text-sm transition-colors"
-        >
-          <Download size={13} className="text-[#ff0000]" />
-          <span className="font-medium">{fmt.label}</span>
-          <span className="text-xs text-[#717171]">{fmt.ext.toUpperCase()}</span>
-          {fmt.filesize !== "Unknown" && (
-            <span className="text-xs text-[#555]">{fmt.filesize}</span>
-          )}
-        </button>
-      ))}
+      {visible.map((fmt) => {
+        const hasAudio = fmt.has_audio && fmt.has_video;
+        const videoOnly = fmt.has_video && !fmt.has_audio;
+        return (
+          <button
+            key={fmt.format_id}
+            onClick={() => onDownload(fmt)}
+            className={`format-btn bg-[#2a2a2a] border rounded-lg px-3 py-2 flex items-center gap-2 text-sm transition-colors ${
+              hasAudio
+                ? "border-[#1a4a1a] hover:border-[#22c55e]"
+                : "border-[#3a3a3a] hover:border-[#ff0000]"
+            }`}
+          >
+            <Download size={13} className={hasAudio ? "text-[#22c55e]" : "text-[#ff0000]"} />
+            <span className="font-medium">{fmt.label}</span>
+            <span className="text-xs text-[#717171]">{fmt.ext.toUpperCase()}</span>
+            {fmt.filesize !== "Unknown" && (
+              <span className="text-xs text-[#555]">{fmt.filesize}</span>
+            )}
+            {hasAudio && (
+              <span className="text-[10px] text-[#22c55e] flex items-center gap-0.5">
+                <Volume2 size={10} /> audio
+              </span>
+            )}
+            {videoOnly && (
+              <span className="text-[10px] text-[#555] flex items-center gap-0.5">
+                <VolumeX size={10} /> silent
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
+    </>
   );
 }
 
@@ -154,21 +182,18 @@ export default function YoutubeDownloader() {
   const [loadingFormats, setLoadingFormats] = useState<string | null>(null);
   const [videoFormats, setVideoFormats] = useState<Record<string, Format[]>>({});
   const [formatMode, setFormatMode] = useState<FormatMode>("video");
-  const [playlistModes, setPlaylistModes] = useState<Record<string, FormatMode>>({});
+  const [playlistModes, setPlaylistModes] = useState<Record<string, FormatMode>>({} as Record<string, FormatMode>);
 
   const handleFetch = async () => {
     if (!url.trim()) return;
     setLoading(true);
     setError("");
     setInfo(null);
-    setFormatMode("combined");
+    setFormatMode("video");
     try {
       const res = await axios.post(`/api/youtube/info`, { url }, { timeout: 45000 });
       const data = res.data;
-      // Default to "video" if there are video-only formats (typical for HD),
-      // fall back to "combined" if only muxed formats exist (rare/shorts)
-      const hasVideoOnly = (data.formats || []).some((f: Format) => f.has_video && !f.has_audio);
-      setFormatMode(hasVideoOnly ? "video" : "combined");
+      setFormatMode("video");
       setInfo(data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string; error?: string } } };
@@ -198,7 +223,7 @@ export default function YoutubeDownloader() {
     try {
       const res = await axios.post(`/api/youtube/playlist-video`, { url: video.url }, { timeout: 45000 });
       setVideoFormats((prev) => ({ ...prev, [video.id]: res.data.formats }));
-      setPlaylistModes((prev) => ({ ...prev, [video.id]: "combined" }));
+      setPlaylistModes((prev) => ({ ...prev, [video.id]: "video" }));
     } catch {}
     setLoadingFormats(null);
   };
@@ -379,12 +404,12 @@ export default function YoutubeDownloader() {
                         {videoFormats[video.id] && (
                           <div className="mt-3 ml-8">
                             <FormatModeToggle
-                              mode={playlistModes[video.id] || "combined"}
+                              mode={playlistModes[video.id] || "video"}
                               setMode={(m) => setPlaylistModes((prev) => ({ ...prev, [video.id]: m }))}
                               formats={videoFormats[video.id]}
                             />
                             <div className="flex flex-wrap gap-1.5">
-                              {filterFormats(videoFormats[video.id], playlistModes[video.id] || "combined").map((fmt) => (
+                              {filterFormats(videoFormats[video.id], playlistModes[video.id] || "video").map((fmt) => (
                                 <button
                                   key={fmt.format_id}
                                   onClick={() => handleDownload(fmt, video.title)}
