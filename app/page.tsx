@@ -126,12 +126,19 @@ export default function Home() {
               <h1 className="text-4xl sm:text-5xl font-bold text-[#f1f1f1] leading-tight mb-4">
                 Save any video.<br />Anywhere. Free.
               </h1>
-              <p className="text-[#aaa] text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+              <p className="text-[#aaa] text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
                 Paste a link from YouTube or Instagram. Clypso fetches the original file in HD MP4 — straight to your device.
               </p>
+            </div>
+          </section>
 
-              {/* Platform selector */}
-              <div className="flex items-center justify-center gap-2 mb-6 flex-wrap">
+          {/* ── Downloader tool ── */}
+          <section ref={downloaderRef} className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
+            <div className="max-w-2xl mx-auto">
+              {tab === "youtube" ? <YoutubeDownloader /> : <InstagramDownloader />}
+
+              {/* Platform selector — below the search bar */}
+              <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
                 <button
                   onClick={() => handleTabClick("youtube")}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
@@ -161,13 +168,6 @@ export default function Home() {
                   Facebook <span className="text-[#333] text-xs">Soon</span>
                 </span>
               </div>
-            </div>
-          </section>
-
-          {/* ── Downloader tool ── */}
-          <section ref={downloaderRef} className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
-            <div className="max-w-2xl mx-auto">
-              {tab === "youtube" ? <YoutubeDownloader /> : <InstagramDownloader />}
             </div>
           </section>
 
