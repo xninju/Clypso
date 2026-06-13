@@ -83,6 +83,52 @@ function parseBravedownz(data: Record<string, unknown>): { title: string; thumbn
   return { title, thumbnail, items };
 }
 
+async function try3205(url: string, key: string): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch("https://facebook17.p.rapidapi.com/api/facebook/links", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": "facebook17.p.rapidapi.com",
+      },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (!d || typeof d !== "object") return null;
+    return d as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function parse3205(data: Record<string, unknown>): { title: string; thumbnail: string; items: unknown[] } | null {
+  const title = (data.title as string) || (data.name as string) || "Facebook Video";
+  const thumbnail = (data.thumbnail as string) || (data.image as string) || "";
+  const items: { url: string; quality: string; ext: string; filesize: string }[] = [];
+
+  const links = data.links as Array<{ quality?: string; url?: string; baseUrl?: string }> | undefined;
+  if (Array.isArray(links)) {
+    for (const l of links) {
+      const u = l.url || l.baseUrl;
+      if (u) items.push({ url: u, quality: l.quality || "Video", ext: "mp4", filesize: "Unknown" });
+    }
+  }
+
+  if (data.hd && typeof data.hd === "string") items.push({ url: data.hd, quality: "HD", ext: "mp4", filesize: "Unknown" });
+  if (data.sd && typeof data.sd === "string" && data.sd !== data.hd) items.push({ url: data.sd, quality: "SD", ext: "mp4", filesize: "Unknown" });
+
+  if (items.length === 0) {
+    const u = (data.url as string) || (data.video as string) || (data.download_url as string);
+    if (u) items.push({ url: u, quality: "Best", ext: "mp4", filesize: "Unknown" });
+  }
+
+  if (items.length === 0) return null;
+  return { title, thumbnail, items };
+}
+
 const SERVICE_HANDLERS: Record<
   string,
   {
@@ -91,6 +137,7 @@ const SERVICE_HANDLERS: Record<
   }
 > = {
   fb_bravedownz: { fetch: tryBravedownz, parse: parseBravedownz },
+  fb_3205: { fetch: try3205, parse: parse3205 },
 };
 
 export async function POST(req: Request) {

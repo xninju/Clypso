@@ -48,8 +48,9 @@ export default function StatsBar() {
     : 0;
 
   return (
-    <div className="border-t border-[#3a3a3a] bg-[#1a1a1a] py-6 px-4">
-      <p className="text-center text-xs text-[#717171] uppercase tracking-widest mb-4">Stats</p>
+    <div className="bg-[#141414] border-y border-[#2a2a2a] py-10 px-4">
+      <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Stats</p>
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] text-center mb-8">Downloads so far.</h2>
       <div className="max-w-3xl mx-auto">
         {loading ? (
           <StatsSkeleton />

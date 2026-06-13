@@ -1,125 +1,8 @@
 # Clypso 🎬
 
-Download YouTube videos, Shorts, Playlists and Instagram Reels, Posts, Carousels.
+**Free video downloader** supporting YouTube, Instagram, TikTok, and Facebook. No login required. No watermarks.
 
-**Stack:** Next.js 14 (Vercel) + FastAPI/yt-dlp (Render) + Neon PostgreSQL
-
----
-
-## Project Structure
-
-```
-clypso/
-├── frontend/        → Deploy to Vercel
-├── backend/         → Deploy to Render
-└── render.yaml      → Render config
-```
-
----
-
-## Step 1 — Set up Neon DB
-
-1. Go to [https://console.neon.tech](https://console.neon.tech) and sign up (free)
-2. Create a new project → name it `clypso`
-3. Copy the **Connection string** (looks like `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
-4. Save it — you'll need it for Vercel env vars
-
----
-
-## Step 2 — Push code to GitHub
-
-1. Create a new GitHub repo (e.g. `clypso`)
-2. Push this entire folder:
-```bash
-git init
-git add .
-git commit -m "initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/clypso.git
-git push -u origin main
-```
-
----
-
-## Step 3 — Deploy Backend to Render
-
-1. Go to [https://render.com](https://render.com) and sign up (free)
-2. Click **New → Web Service**
-3. Connect your GitHub repo
-4. Configure:
-   - **Root Directory:** `backend`
-   - **Environment:** `Python 3`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - **Plan:** Free
-5. Click **Create Web Service**
-6. Wait for deploy (~2-3 min). Copy your Render URL:
-   `https://clypso-api.onrender.com`
-
----
-
-## Step 4 — Deploy Frontend to Vercel
-
-1. Go to [https://vercel.com](https://vercel.com) and sign up
-2. Click **Add New → Project** → Import your GitHub repo
-3. Set **Root Directory** to `frontend`
-4. Add these **Environment Variables**:
-
-| Key | Value |
-|-----|-------|
-| `NEXT_PUBLIC_BACKEND_URL` | `https://your-app.onrender.com` |
-| `DATABASE_URL` | Your Neon connection string |
-
-5. Click **Deploy**
-
-### Run Prisma migration after first deploy
-
-In your local frontend folder:
-```bash
-cd frontend
-npm install
-npx prisma db push
-```
-This creates the tables in your Neon DB.
-
----
-
-## Step 5 — Set up UptimeRobot (keep Render alive 24/7)
-
-Render free tier sleeps after 15 min of inactivity. Fix this:
-
-1. Go to [https://uptimerobot.com](https://uptimerobot.com) → free account
-2. Click **Add New Monitor**
-3. Settings:
-   - **Monitor Type:** HTTP(s)
-   - **Friendly Name:** Clypso API
-   - **URL:** `https://your-app.onrender.com/health`
-   - **Monitoring Interval:** 5 minutes
-4. Save — done! Your backend stays warm 24/7.
-
----
-
-## Local Development
-
-### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-# API runs at http://localhost:8000
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-cp .env.example .env.local
-# Fill in .env.local with:
-#   NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
-#   DATABASE_URL=your-neon-connection-string
-npx prisma db push
-npm run dev
-# UI runs at http://localhost:3000
-```
+**Stack:** Next.js 15 · Prisma 5 · Neon PostgreSQL · Tailwind CSS · TypeScript · pnpm
 
 ---
 
@@ -133,15 +16,118 @@ npm run dev
 | Instagram single posts | ✅ |
 | Instagram Reels | ✅ |
 | Instagram Carousels (multi-photo/video) | ✅ |
-| Visit counter | ✅ |
-| Download counter (YT + IG + Total) | ✅ |
+| TikTok videos (no watermark) | ✅ |
+| Facebook videos & reels | ✅ |
+| Visit + download counter (per platform) | ✅ |
+| Admin panel with API key management | ✅ |
 | No login required | ✅ |
 | No watermarks | ✅ |
 
 ---
 
+## Architecture
+
+Single Next.js 15 app — no separate backend needed. All API calls are server-side Route Handlers.
+
+```
+clypso/
+├── app/
+│   ├── page.tsx                  — Unified URL bar, platform auto-detection
+│   ├── admin/page.tsx            — Admin panel (PIN-protected)
+│   └── api/
+│       ├── youtube/info/         — YouTube downloader (RapidAPI cascade)
+│       ├── instagram/info/       — Instagram downloader (RapidAPI)
+│       ├── tiktok/info/          — TikTok downloader (RapidAPI)
+│       ├── facebook/info/        — Facebook downloader (RapidAPI)
+│       └── stats/                — Download stats endpoint
+├── components/                   — UI components
+├── prisma/schema.prisma          — Neon DB schema
+└── lib/prisma.ts                 — Prisma client
+```
+
+---
+
+## Database (Neon)
+
+Uses Neon PostgreSQL. Tables:
+
+| Table | Purpose |
+|-------|---------|
+| `YtApiKey` | YouTube RapidAPI keys |
+| `IgApiKey` | Instagram RapidAPI keys |
+| `TtApiKey` | TikTok RapidAPI keys |
+| `FbApiKey` | Facebook RapidAPI keys |
+| `Stats` | Visit + download counters |
+| `DownloadLog` | Per-download log |
+| `ApiKey` | Legacy key table |
+| `Feedback` | User feedback |
+
+---
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `ADMIN_PIN` | PIN to access the admin panel at `/admin` |
+| `PROXY_URL` | (Optional) SOCKS5/HTTP proxy for yt-dlp |
+
+---
+
+## API Keys Setup
+
+All RapidAPI keys are managed via the admin panel at `/admin`.
+
+### Recommended Free APIs (no credit card)
+
+**YouTube** — cascade of 3 APIs (priority order):
+1. `yt_api` — [YouTube Data API](https://rapidapi.com/h0p3rwe/api/youtube138)
+2. `yt_media_dl` — [YouTube Media Downloader](https://rapidapi.com/ugoBoy/api/social-media-video-downloader)
+3. `ytstream` — [YtStream](https://rapidapi.com/ytjar/api/ytstream-download-yt-videos)
+
+**Instagram:**
+- `ig_diyorbekkanal` — [Instagram Post/Reels/Stories Downloader](https://rapidapi.com/diyorbekkanal/api/instagram-post-reels-stories-downloader-api) · 100 req/month free
+
+**TikTok:**
+- `tt_7scorp` — [TikTok Downloader No Watermark](https://rapidapi.com/7scorp-7scorp-default/api/tiktok-downloader-download-tiktok-videos-without-watermark) · 400 req/month free
+
+**Facebook:**
+- `fb_3205` — [facebook (by 3205)](https://rapidapi.com/3205/api/facebook17) · **1,000 req/month free · no card required** ⭐ Recommended
+- `fb_bravedownz` — [Facebook Story Saver](https://rapidapi.com/bravedownz/api/facebook-story-saver-and-video-downloader) · requires card
+
+---
+
+## Local Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up environment
+cp .env.example .env.local
+# Add DATABASE_URL and ADMIN_PIN to .env.local
+
+# Push Prisma schema to DB
+pnpm prisma db push
+
+# Start dev server
+pnpm dev
+# App runs at http://localhost:3000
+```
+
+---
+
+## Admin Panel
+
+Visit `/admin` and enter your `ADMIN_PIN`. From there you can:
+- Add / remove / enable / disable API keys per platform
+- View request counts per key
+- Monitor key health
+
+---
+
 ## Notes
 
-- Only **public** Instagram posts can be downloaded
+- Only **public** posts can be downloaded (Instagram, Facebook)
 - For personal use only — respect content creators' rights
-- yt-dlp is updated regularly; bump the version in `requirements.txt` if downloads break
+- RapidAPI keys are stored in the Neon DB and cached for 60 seconds

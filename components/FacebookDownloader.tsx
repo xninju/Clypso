@@ -149,8 +149,8 @@ export default function FacebookDownloader({
           </p>
           <ol className="text-xs text-[#555] space-y-1 mb-3 list-decimal list-inside">
             <li>Sign up free at <span style={{ color: FB_BLUE }}>rapidapi.com</span></li>
-            <li>Search &quot;Facebook Story Saver&quot; by bravedownz → subscribe (free tier)</li>
-            <li>Copy your API key and add it in the Admin panel</li>
+            <li>Search &quot;facebook&quot; by 3205 → subscribe free (1,000 req/month, no card)</li>
+            <li>Copy your API key and add it in the Admin panel as <strong>fb_3205</strong></li>
           </ol>
           <a
             href="/admin"

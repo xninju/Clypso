@@ -90,6 +90,13 @@ const IG_SERVICES: Record<string, ServiceInfo> = {
 };
 
 const FB_SERVICES: Record<string, ServiceInfo> = {
+  fb_3205: {
+    name: "Facebook Video Downloader (facebook17)",
+    provider: "3205",
+    host: "facebook17.p.rapidapi.com",
+    url: "https://rapidapi.com/3205/api/facebook17",
+    free: "1,000 req/month free · no card",
+  },
   fb_bravedownz: {
     name: "Facebook Story Saver & Video Downloader",
     provider: "bravedownz",
