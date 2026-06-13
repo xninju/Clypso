@@ -137,8 +137,16 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               {tab === "youtube" ? <YoutubeDownloader /> : <InstagramDownloader />}
 
+              {/* API note */}
+              <p className="text-center text-xs text-[#3d3d3d] mt-5 mb-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 flex-shrink-0 text-[#3d3d3d]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Metadata &amp; streams fetched in real-time via verified third-party extraction APIs. No files are stored on our servers.
+                </span>
+              </p>
+
               {/* Platform selector — below the search bar */}
-              <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+              <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
                 <button
                   onClick={() => handleTabClick("youtube")}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
