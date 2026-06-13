@@ -36,3 +36,9 @@ externalPort = 80
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SITE_URL = "https://clypso.qzz.io/"
+NEXT_PUBLIC_GOOGLE_VERIFICATION = "i don't have it "

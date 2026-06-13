@@ -83,7 +83,7 @@ export const metadata: Metadata = {
       "Download YouTube videos, Shorts, Playlists and Instagram Reels for free. No login required, no watermark, HD quality. Works on any device.",
     images: [
       {
-        url: `${SITE_URL}/og-image.png`,
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: "Clypso — Free YouTube & Instagram Video Downloader",
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     title: "Clypso — Free YouTube & Instagram Video Downloader",
     description:
       "Download YouTube videos, Shorts, Playlists and Instagram Reels in HD. Free, no login, no watermark.",
-    images: [`${SITE_URL}/og-image.png`],
+    images: [`${SITE_URL}/opengraph-image`],
     creator: "@clypso",
     site: "@clypso",
   },

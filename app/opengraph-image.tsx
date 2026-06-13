@@ -21,17 +21,6 @@ export default function OgImage() {
           position: "relative",
         }}
       >
-        {/* Grid background pattern */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
-
         {/* Top red accent line */}
         <div
           style={{
@@ -41,6 +30,7 @@ export default function OgImage() {
             right: 0,
             height: "4px",
             background: "linear-gradient(90deg, #ff0000, #e1306c, #ff0000)",
+            display: "flex",
           }}
         />
 
@@ -57,7 +47,15 @@ export default function OgImage() {
             marginBottom: "32px",
           }}
         >
-          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e" }} />
+          <div
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "#22c55e",
+              display: "flex",
+            }}
+          />
           <span style={{ color: "#aaa", fontSize: "18px", letterSpacing: "0.08em" }}>
             FREE · NO LOGIN · NO WATERMARK
           </span>
@@ -66,18 +64,35 @@ export default function OgImage() {
         {/* Main headline */}
         <div
           style={{
-            fontSize: "80px",
-            fontWeight: 800,
-            color: "#f1f1f1",
-            lineHeight: 1.1,
-            textAlign: "center",
-            letterSpacing: "-0.02em",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "baseline",
+            gap: "20px",
             marginBottom: "20px",
-            maxWidth: "900px",
           }}
         >
-          Save any video.{" "}
-          <span style={{ color: "#ff0000" }}>Free.</span>
+          <span
+            style={{
+              fontSize: "80px",
+              fontWeight: 800,
+              color: "#f1f1f1",
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Save any video.
+          </span>
+          <span
+            style={{
+              fontSize: "80px",
+              fontWeight: 800,
+              color: "#ff0000",
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Free.
+          </span>
         </div>
 
         {/* Sub-headline */}
@@ -89,6 +104,7 @@ export default function OgImage() {
             maxWidth: "700px",
             lineHeight: 1.5,
             marginBottom: "48px",
+            display: "flex",
           }}
         >
           Download YouTube & Instagram videos in HD. No app, no account needed.
@@ -107,7 +123,15 @@ export default function OgImage() {
               padding: "12px 28px",
             }}
           >
-            <div style={{ width: "20px", height: "20px", background: "#ff0000", borderRadius: "4px" }} />
+            <div
+              style={{
+                width: "20px",
+                height: "20px",
+                background: "#ff0000",
+                borderRadius: "4px",
+                display: "flex",
+              }}
+            />
             <span style={{ color: "#ff6b6b", fontSize: "22px", fontWeight: 600 }}>YouTube</span>
           </div>
           <div
@@ -121,7 +145,15 @@ export default function OgImage() {
               padding: "12px 28px",
             }}
           >
-            <div style={{ width: "20px", height: "20px", background: "#e1306c", borderRadius: "4px" }} />
+            <div
+              style={{
+                width: "20px",
+                height: "20px",
+                background: "#e1306c",
+                borderRadius: "4px",
+                display: "flex",
+              }}
+            />
             <span style={{ color: "#e1306c", fontSize: "22px", fontWeight: 600 }}>Instagram</span>
           </div>
         </div>
@@ -131,6 +163,7 @@ export default function OgImage() {
           style={{
             position: "absolute",
             bottom: "32px",
+            display: "flex",
             color: "#3a3a3a",
             fontSize: "18px",
             letterSpacing: "0.05em",
