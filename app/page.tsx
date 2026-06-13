@@ -79,7 +79,6 @@ function FAQ({ q, a }: { q: string; a: string }) {
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("youtube");
-  const [transferUrl, setTransferUrl] = useState("");
 
   useEffect(() => {
     if (!sessionStorage.getItem("visited")) {
@@ -91,15 +90,6 @@ export default function Home() {
       }).catch(() => {});
     }
   }, []);
-
-  const handleUrlChange = (url: string) => {
-    const v = url.trim().toLowerCase();
-    if (v.includes("youtube.com") || v.includes("youtu.be")) {
-      if (tab !== "youtube") { setTransferUrl(url); setTab("youtube"); }
-    } else if (v.includes("instagram.com")) {
-      if (tab !== "instagram") { setTransferUrl(url); setTab("instagram"); }
-    }
-  };
 
   return (
     <>
@@ -139,8 +129,29 @@ export default function Home() {
           <section className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
               {tab === "youtube"
-                ? <YoutubeDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
-                : <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
+                ? <YoutubeDownloader />
+                : <InstagramDownloader />}
+
+              {/* Platform badges — decorative only */}
+              <div className="flex items-center justify-center gap-2 mt-5 flex-wrap pointer-events-none select-none">
+                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border bg-[#ff0000] border-[#ff0000] text-white cursor-default">
+                  <Youtube size={15} /> YouTube
+                </span>
+                <span
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border border-transparent text-white cursor-default"
+                  style={{ background: "linear-gradient(to right, #833ab4, #e1306c, #fcaf45)" }}
+                >
+                  <Instagram size={15} /> Instagram
+                </span>
+                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#555] cursor-default">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#69C9D0]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>
+                  TikTok <span className="text-[#444] text-xs">Soon</span>
+                </span>
+                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#555] cursor-default">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  Facebook <span className="text-[#444] text-xs">Soon</span>
+                </span>
+              </div>
 
               {/* API note */}
               <p className="text-center text-xs text-[#3d3d3d] mt-5 mb-1">
@@ -149,32 +160,6 @@ export default function Home() {
                   Metadata &amp; streams fetched in real-time via verified third-party extraction APIs. No files are stored on our servers.
                 </span>
               </p>
-
-              {/* Platform indicator — visual only, auto-highlights on URL detection */}
-              <div className="flex items-center justify-center gap-2 mt-4 flex-wrap select-none pointer-events-none">
-                <span className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                  tab === "youtube"
-                    ? "bg-[#ff0000] border-[#ff0000] text-white"
-                    : "border-[#3a3a3a] text-[#555]"
-                }`}>
-                  <Youtube size={15} /> YouTube
-                </span>
-                <span className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                  tab === "instagram"
-                    ? "bg-white border-white text-[#0f0f0f]"
-                    : "border-[#3a3a3a] text-[#555]"
-                }`}>
-                  <Instagram size={15} /> Instagram
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#444]">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>
-                  TikTok <span className="text-[#333] text-xs ml-1">Soon</span>
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#444]">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  Facebook <span className="text-[#333] text-xs ml-1">Soon</span>
-                </span>
-              </div>
             </div>
           </section>
 
@@ -220,21 +205,27 @@ export default function Home() {
               <p className="text-[#717171] text-sm text-center mb-10">From a viral Short to a full YouTube edit — Clypso handles them all.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { icon: <Youtube size={22} className="text-[#f1f1f1]" />, name: "YouTube", sub: "Videos · Shorts · Playlists", live: true },
-                  { icon: <Instagram size={22} className="text-[#f1f1f1]" />, name: "Instagram", sub: "Posts · Reels · Carousels", live: true },
                   {
-                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#444]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>,
-                    name: "TikTok", sub: "Coming soon", live: false,
+                    icon: <Youtube size={22} className="text-[#ff0000]" />,
+                    name: "YouTube", sub: "Videos · Shorts · Playlists", live: true, color: "text-[#ff0000]",
                   },
                   {
-                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#444]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
-                    name: "Facebook", sub: "Coming soon", live: false,
+                    icon: <Instagram size={22} style={{ color: "#e1306c" }} />,
+                    name: "Instagram", sub: "Posts · Reels · Carousels", live: true, color: "text-[#e1306c]",
+                  },
+                  {
+                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#69C9D0]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>,
+                    name: "TikTok", sub: "Coming soon", live: false, color: "text-[#69C9D0]",
+                  },
+                  {
+                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
+                    name: "Facebook", sub: "Coming soon", live: false, color: "text-[#1877F2]",
                   },
                 ].map((p) => (
                   <div
                     key={p.name}
                     className={`rounded-2xl border p-5 flex flex-col items-center text-center gap-2 ${
-                      p.live ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-[#111] border-[#1e1e1e] opacity-50"
+                      p.live ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-[#111] border-[#1e1e1e] opacity-40"
                     }`}
                   >
                     {p.icon}
