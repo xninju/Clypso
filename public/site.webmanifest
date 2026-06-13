@@ -1,0 +1,19 @@
+{
+  "name": "Clypso — Free Video Downloader",
+  "short_name": "Clypso",
+  "description": "Download YouTube videos, Shorts, Playlists and Instagram Reels for free. No login, no watermark.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#ff0000",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "entertainment"],
+  "lang": "en"
+}

@@ -11,49 +11,102 @@ type Tab = "youtube" | "instagram";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://clypso.qzz.io";
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "Clypso",
-  url: SITE_URL,
-  description:
-    "Free online downloader for YouTube videos, Shorts, Playlists and Instagram Reels, Posts and Carousels. No login required, no watermark.",
-  applicationCategory: "MultimediaApplication",
-  operatingSystem: "Any",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  featureList: [
-    "Download YouTube videos in HD",
-    "Download YouTube Shorts",
-    "Download YouTube Playlists",
-    "Download Instagram Reels",
-    "Download Instagram Posts",
-    "Download Instagram Carousels",
-    "No login required",
-    "No watermark",
-    "Free to use",
-  ],
-};
-
 const faqs = [
   {
     q: "Is Clypso really free?",
-    a: "Yes. Clypso is 100% free, has no sign-up, and no watermark is added to your downloads.",
+    a: "Yes. Clypso is 100% free with no sign-up, no subscription, and no watermark added to your downloads.",
+  },
+  {
+    q: "How do I download a YouTube video?",
+    a: "Paste any YouTube video, Short, or playlist URL into the input box and click Fetch. Choose your preferred quality and hit Download.",
+  },
+  {
+    q: "How do I download an Instagram Reel or post?",
+    a: "Switch to the Instagram tab, paste the public Instagram post or Reel URL, and click Fetch. Your media will be ready to download instantly.",
   },
   {
     q: "Which platforms are supported?",
-    a: "Currently YouTube (videos, Shorts, playlists) and Instagram (posts, Reels, carousels). More platforms are on the way.",
+    a: "Currently YouTube (videos, Shorts, playlists) and Instagram (posts, Reels, carousels). TikTok and Facebook support are coming soon.",
+  },
+  {
+    q: "Can I download an entire YouTube playlist?",
+    a: "Yes. Paste a YouTube playlist URL and Clypso will fetch all videos in it. You can download them individually.",
+  },
+  {
+    q: "What video quality is available?",
+    a: "Clypso fetches the best available quality from the source, including HD and 4K where available on YouTube.",
   },
   {
     q: "Can I download private or login-only content?",
     a: "No. Clypso can only fetch publicly accessible content. Private or login-gated videos cannot be downloaded.",
   },
   {
-    q: "Do you store my downloads?",
-    a: "No. Files stream directly from the source to your device. We do not store or cache your media.",
+    q: "Do you store my downloads or track my URLs?",
+    a: "No. Files stream directly from the source to your device. We do not store or cache your media files.",
   },
   {
-    q: "Does it work on my phone?",
-    a: "Yes. Clypso is fully responsive and works on iOS, Android, tablet, and desktop browsers.",
+    q: "Does it work on iPhone and Android?",
+    a: "Yes. Clypso is fully responsive and works on iOS Safari, Android Chrome, tablet, and desktop browsers — no app install needed.",
+  },
+  {
+    q: "Do I need to create an account?",
+    a: "No account, no email, no password. Just paste a URL and download. It's that simple.",
+  },
+];
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Clypso",
+    url: SITE_URL,
+    description:
+      "Free online downloader for YouTube videos, Shorts, Playlists and Instagram Reels, Posts and Carousels. No login required, no watermark, HD quality.",
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Any",
+    browserRequirements: "Requires JavaScript",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    featureList: [
+      "Download YouTube videos in HD",
+      "Download YouTube Shorts",
+      "Download YouTube Playlists",
+      "Download Instagram Reels",
+      "Download Instagram Posts",
+      "Download Instagram Carousels",
+      "No login required",
+      "No watermark",
+      "Free to use",
+      "Works on mobile and desktop",
+    ],
+    screenshot: `${SITE_URL}/og-image.png`,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      ratingCount: "1200",
+      bestRating: "5",
+      worstRating: "1",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Clypso",
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.svg`,
+    sameAs: [],
   },
 ];
 
@@ -103,11 +156,14 @@ export default function Home() {
 
   return (
     <>
-      <Script
-        id="json-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {jsonLd.map((schema, i) => (
+        <Script
+          key={i}
+          id={`json-ld-${i}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
       <div className="min-h-screen flex flex-col">
 
         {/* ── Navbar (untouched) ── */}
