@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Key, BarChart2, List, LogOut, Plus, Trash2,
-  Edit3, Check, X, Eye, EyeOff, RefreshCw,
+  Check, X, Eye, EyeOff, RefreshCw,
   Youtube, Instagram, Globe, Download, Shield,
   ExternalLink, ChevronUp, ChevronDown, MessageSquare, Star,
 } from "lucide-react";
@@ -301,20 +301,11 @@ interface KeysPanelProps {
 function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: KeysPanelProps) {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [showAddFor, setShowAddFor] = useState<string | null>(null);
   const [revealId, setRevealId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const [showRef, setShowRef] = useState(false);
 
-  const serviceOptions = Object.keys(services);
-  const [form, setForm] = useState({
-    service: serviceOptions[0] || "",
-    label: "",
-    key: "",
-    priority: "1",
-    enabled: true,
-  });
+  const [form, setForm] = useState({ service: "", label: "", key: "", priority: "1", enabled: true });
 
   const headers = { "Content-Type": "application/json", "x-admin-pin": pin };
 
@@ -330,7 +321,10 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
 
   useEffect(() => { load(); }, [load]);
 
-  const resetForm = () => setForm({ service: serviceOptions[0] || "", label: "", key: "", priority: "1", enabled: true });
+  const openAdd = (svc: string) => {
+    setForm({ service: svc, label: "", key: "", priority: "1", enabled: true });
+    setShowAddFor(svc);
+  };
 
   const addKey = async () => {
     if (!form.key) return;
@@ -341,7 +335,7 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
         headers,
         body: JSON.stringify({ ...form, priority: parseInt(form.priority) || 1 }),
       });
-      if (r.ok) { await load(); resetForm(); setShowAdd(false); onToast("Key added"); }
+      if (r.ok) { await load(); setShowAddFor(null); onToast("Key added"); }
     } finally { setSaving(false); }
   };
 
@@ -362,7 +356,7 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
     } catch {}
   };
 
-  const selectedServiceInfo = services[form.service];
+  const totalKeys = keys.length;
 
   return (
     <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl overflow-hidden">
@@ -371,225 +365,178 @@ function KeysPanel({ pin, title, icon, accent, services, apiBase, onToast }: Key
         <div className="flex items-center gap-2">
           {icon}
           <span className="text-sm font-semibold text-[#f1f1f1]">{title}</span>
-          <span className="text-xs text-[#555] bg-[#2a2a2a] px-2 py-0.5 rounded-full">{keys.length} key{keys.length !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-[#555] bg-[#2a2a2a] px-2 py-0.5 rounded-full">
+            {totalKeys} key{totalKeys !== 1 ? "s" : ""}
+          </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={load} className="p-1.5 text-[#555] hover:text-[#aaa] rounded-lg hover:bg-[#2a2a2a] transition-colors">
-            <RefreshCw size={13} />
-          </button>
-          <button
-            onClick={() => { resetForm(); setShowAdd(true); setEditId(null); }}
-            style={{ backgroundColor: accent }}
-            className="text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-          >
-            <Plus size={13} /> Add Key
-          </button>
-        </div>
+        <button onClick={load} className="p-1.5 text-[#555] hover:text-[#aaa] rounded-lg hover:bg-[#2a2a2a] transition-colors">
+          <RefreshCw size={13} />
+        </button>
       </div>
 
       <div className="p-4 space-y-3">
-        {/* API reference links */}
-        <div className="border border-[#2a2a2a] rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowRef(!showRef)}
-            className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-[#1a1a1a] transition-colors"
-          >
-            <span className="text-xs text-[#717171] font-medium">Available APIs &amp; Links</span>
-            <span className="text-xs text-[#555]">{showRef ? "▲" : "▼"}</span>
-          </button>
-          {showRef && (
-            <div className="border-t border-[#2a2a2a] divide-y divide-[#1f1f1f]">
-              {Object.entries(services).map(([svc, info]) => (
-                <div key={svc} className="px-3 py-2.5 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs text-[#f1f1f1] font-medium">{info.name}</p>
-                    <p className="text-xs text-[#555] mt-0.5">by {info.provider} · {info.free} free</p>
-                    <p className="text-xs text-[#3a3a3a] font-mono truncate mt-0.5">{info.host}</p>
+        {Object.entries(services).map(([svc, info]) => {
+          const svcKeys = keys.filter((k) => k.service === svc);
+          const isAdding = showAddFor === svc;
+
+          return (
+            <div key={svc} className="border border-[#2a2a2a] rounded-xl overflow-hidden">
+              {/* Service info header */}
+              <div className="px-3 py-2.5 bg-[#1a1a1a] flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs font-semibold text-[#f1f1f1]">{info.name}</p>
+                    <span className="text-[10px] text-[#717171] bg-[#2a2a2a] px-1.5 py-0.5 rounded font-medium">
+                      {info.free}
+                    </span>
+                    <span className="text-[10px] text-[#444] bg-[#2a2a2a] px-1.5 py-0.5 rounded font-medium">
+                      {svcKeys.length} added
+                    </span>
                   </div>
+                  <p className="text-[10px] text-[#444] font-mono truncate mt-1">{info.host}</p>
                   <a
                     href={info.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-shrink-0 flex items-center gap-1 text-xs text-[#555] hover:text-[#aaa] mt-0.5 transition-colors"
+                    className="inline-flex items-center gap-1 text-[10px] text-[#555] hover:text-[#aaa] mt-0.5 transition-colors"
                   >
-                    <ExternalLink size={11} /> RapidAPI
+                    <ExternalLink size={9} /> rapidapi.com ↗
                   </a>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Add / Edit Form */}
-        {(showAdd || editId !== null) && (
-          <div className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-3 space-y-3">
-            <p className="text-xs font-semibold text-[#f1f1f1]">{showAdd ? "Add Key" : "Edit Key"}</p>
-
-            <div>
-              <label className="text-xs text-[#717171] mb-1 block">Service</label>
-              <select
-                value={form.service}
-                onChange={(e) => setForm({ ...form, service: e.target.value })}
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] focus:outline-none focus:border-[#555]"
-              >
-                {serviceOptions.map((s) => (
-                  <option key={s} value={s}>{services[s].name}</option>
-                ))}
-              </select>
-              {selectedServiceInfo && (
-                <a
-                  href={selectedServiceInfo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-[#555] hover:text-[#aaa] mt-1.5 transition-colors"
+                <button
+                  onClick={() => isAdding ? setShowAddFor(null) : openAdd(svc)}
+                  style={isAdding ? undefined : { backgroundColor: accent }}
+                  className={`flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all ${
+                    isAdding
+                      ? "bg-[#2a2a2a] text-[#717171] hover:text-[#f1f1f1]"
+                      : "text-white hover:opacity-90"
+                  }`}
                 >
-                  <ExternalLink size={10} /> Get key from RapidAPI · {selectedServiceInfo.free} free
-                </a>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-[#717171] mb-1 block">RapidAPI Key</label>
-              <input
-                type="text"
-                value={form.key}
-                onChange={(e) => setForm({ ...form, key: e.target.value })}
-                placeholder="Paste x-rapidapi-key here"
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] placeholder-[#555] font-mono focus:outline-none focus:border-[#555]"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-[#717171] mb-1 block">Label (optional)</label>
-                <input
-                  type="text"
-                  value={form.label}
-                  onChange={(e) => setForm({ ...form, label: e.target.value })}
-                  placeholder="e.g. Free tier"
-                  className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] placeholder-[#555] focus:outline-none focus:border-[#555]"
-                />
+                  {isAdding ? <><X size={11} /> Cancel</> : <><Plus size={11} /> Add Key</>}
+                </button>
               </div>
-              <div>
-                <label className="text-xs text-[#717171] mb-1 block">Priority (1 = first)</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={form.priority}
-                  onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                  className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] focus:outline-none focus:border-[#555]"
-                />
-              </div>
-            </div>
 
-            <label className="flex items-center gap-2 text-xs text-[#aaa] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.enabled}
-                onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-                className="w-3.5 h-3.5 accent-[#ff0000]"
-              />
-              Enabled
-            </label>
-
-            <div className="flex gap-2">
-              <button
-                onClick={showAdd ? addKey : () => {
-                  if (editId) { updateKey(editId, { ...form, priority: parseInt(form.priority) || 1 }); setEditId(null); }
-                }}
-                disabled={saving || !form.key}
-                style={{ backgroundColor: form.key && !saving ? accent : undefined }}
-                className="disabled:bg-[#3a3a3a] disabled:text-[#717171] text-white text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 hover:opacity-90"
-              >
-                <Check size={12} /> {saving ? "Saving…" : "Save"}
-              </button>
-              <button
-                onClick={() => { setShowAdd(false); setEditId(null); }}
-                className="text-[#717171] hover:text-[#f1f1f1] text-xs px-3 py-1.5 rounded-lg hover:bg-[#2a2a2a] transition-colors flex items-center gap-1.5"
-              >
-                <X size={12} /> Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Key list */}
-        {loading ? (
-          <div className="space-y-2">
-            {[0, 1].map((i) => (
-              <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl h-14 animate-pulse" />
-            ))}
-          </div>
-        ) : keys.length === 0 ? (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 text-center text-[#555] text-xs">
-            No keys yet. Click &ldquo;Add Key&rdquo; to get started.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {keys.map((k) => {
-              const meta = services[k.service];
-              return (
-                <div key={k.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex-shrink-0 w-5 h-5 bg-[#2a2a2a] rounded text-xs font-bold text-[#aaa] flex items-center justify-center">
-                      {k.priority}
-                    </span>
-                    <button
-                      onClick={() => updateKey(k.id, { enabled: !k.enabled })}
-                      title={k.enabled ? "Click to disable" : "Click to enable"}
-                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-opacity hover:opacity-70 ${k.enabled ? "bg-green-500" : "bg-[#555]"}`}
+              {/* Inline add form */}
+              {isAdding && (
+                <div className="px-3 py-3 border-t border-[#2a2a2a] bg-[#161616] space-y-2.5">
+                  <div>
+                    <label className="text-xs text-[#717171] mb-1 block">RapidAPI Key</label>
+                    <input
+                      type="text"
+                      value={form.key}
+                      onChange={(e) => setForm({ ...form, key: e.target.value })}
+                      placeholder="Paste x-rapidapi-key here"
+                      className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] placeholder-[#555] font-mono focus:outline-none focus:border-[#555]"
+                      autoFocus
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[#f1f1f1] truncate">
-                        {meta?.name || k.service}
-                        {k.label && <span className="ml-1.5 text-[#555]">· {k.label}</span>}
-                      </p>
-                      <p className="text-xs text-[#444] font-mono truncate">
-                        {revealId === k.id ? k.key : mask(k.key)}
-                      </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-[#717171] mb-1 block">Label (optional)</label>
+                      <input
+                        type="text"
+                        value={form.label}
+                        onChange={(e) => setForm({ ...form, label: e.target.value })}
+                        placeholder="e.g. Free tier"
+                        className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] placeholder-[#555] focus:outline-none focus:border-[#555]"
+                      />
                     </div>
-                    <span className="text-xs text-[#555] flex-shrink-0">{fmt(k.req_count)} req</span>
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
-                      <button onClick={() => setRevealId(revealId === k.id ? null : k.id)} className="p-1.5 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors">
-                        {revealId === k.id ? <EyeOff size={12} /> : <Eye size={12} />}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditId(k.id); setShowAdd(false);
-                          setForm({ service: k.service, label: k.label, key: k.key, priority: String(k.priority), enabled: k.enabled });
-                        }}
-                        className="p-1.5 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors"
-                      >
-                        <Edit3 size={12} />
-                      </button>
-                      <button onClick={() => deleteKey(k.id)} className="p-1.5 text-[#555] hover:text-[#ff6b6b] rounded hover:bg-[#2a2a2a] transition-colors">
-                        <Trash2 size={12} />
-                      </button>
-                      <button onClick={() => updateKey(k.id, { priority: Math.max(1, k.priority - 1) })} className="p-1.5 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors" title="Higher priority">
-                        <ChevronUp size={12} />
-                      </button>
-                      <button onClick={() => updateKey(k.id, { priority: k.priority + 1 })} className="p-1.5 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors" title="Lower priority">
-                        <ChevronDown size={12} />
-                      </button>
+                    <div>
+                      <label className="text-xs text-[#717171] mb-1 block">Priority (1 = first)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={form.priority}
+                        onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                        className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-xs text-[#f1f1f1] focus:outline-none focus:border-[#555]"
+                      />
                     </div>
                   </div>
-                  {meta && (
-                    <div className="mt-1.5 ml-7">
-                      <a
-                        href={meta.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[#3a3a3a] hover:text-[#555] transition-colors"
-                      >
-                        <ExternalLink size={9} /> {meta.url.replace("https://rapidapi.com/", "rapidapi.com/")}
-                      </a>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-xs text-[#aaa] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.enabled}
+                        onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+                        className="w-3.5 h-3.5"
+                      />
+                      Enabled
+                    </label>
+                    <button
+                      onClick={addKey}
+                      disabled={saving || !form.key}
+                      style={{ backgroundColor: form.key && !saving ? accent : undefined }}
+                      className="disabled:bg-[#3a3a3a] disabled:text-[#717171] text-white text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 hover:opacity-90"
+                    >
+                      <Check size={12} /> {saving ? "Saving…" : "Save Key"}
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+
+              {/* Keys for this service */}
+              {loading ? (
+                <div className="px-3 py-2 border-t border-[#1f1f1f]">
+                  <div className="bg-[#2a2a2a] rounded h-7 animate-pulse" />
+                </div>
+              ) : svcKeys.length > 0 ? (
+                <div className="divide-y divide-[#1f1f1f] border-t border-[#1f1f1f]">
+                  {svcKeys.map((k) => (
+                    <div key={k.id} className="px-3 py-2 flex items-center gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 bg-[#2a2a2a] rounded text-[10px] font-bold text-[#717171] flex items-center justify-center">
+                        {k.priority}
+                      </span>
+                      <button
+                        onClick={() => updateKey(k.id, { enabled: !k.enabled })}
+                        title={k.enabled ? "Click to disable" : "Click to enable"}
+                        className={`w-2 h-2 rounded-full flex-shrink-0 hover:opacity-70 transition-opacity ${k.enabled ? "bg-green-500" : "bg-[#555]"}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[#555] font-mono truncate">
+                          {revealId === k.id ? k.key : mask(k.key)}
+                          {k.label && <span className="ml-1.5 text-[#444] font-sans not-italic">· {k.label}</span>}
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-[#444] flex-shrink-0">{fmt(k.req_count)} req</span>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <button
+                          onClick={() => setRevealId(revealId === k.id ? null : k.id)}
+                          className="p-1 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors"
+                        >
+                          {revealId === k.id ? <EyeOff size={11} /> : <Eye size={11} />}
+                        </button>
+                        <button
+                          onClick={() => deleteKey(k.id)}
+                          className="p-1 text-[#555] hover:text-[#ff6b6b] rounded hover:bg-[#2a2a2a] transition-colors"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <button
+                          onClick={() => updateKey(k.id, { priority: Math.max(1, k.priority - 1) })}
+                          className="p-1 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors"
+                          title="Higher priority"
+                        >
+                          <ChevronUp size={11} />
+                        </button>
+                        <button
+                          onClick={() => updateKey(k.id, { priority: k.priority + 1 })}
+                          className="p-1 text-[#555] hover:text-[#aaa] rounded hover:bg-[#2a2a2a] transition-colors"
+                          title="Lower priority"
+                        >
+                          <ChevronDown size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-3 py-2.5 border-t border-[#1f1f1f]">
+                  <p className="text-[10px] text-[#3a3a3a] text-center">No keys added yet</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         <p className="text-xs text-[#3a3a3a] text-center pt-1">
           Keys tried in priority order · auto-cascades to next on failure
