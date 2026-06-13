@@ -62,7 +62,7 @@ function Thumb({
   );
 }
 
-export default function InstagramDownloader() {
+export default function InstagramDownloader({ onUrlChange }: { onUrlChange?: (url: string) => void }) {
   const [url, setUrl]           = useState("");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
@@ -123,7 +123,7 @@ export default function InstagramDownloader() {
           <input
             type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); onUrlChange?.(e.target.value); }}
             onKeyDown={(e) => e.key === "Enter" && handleFetch()}
             placeholder="Paste Instagram URL — post, reel, or carousel"
             className="input-url-ig w-full bg-[#212121] border border-[#3a3a3a] rounded-xl px-4 py-3 text-sm text-[#f1f1f1] placeholder-[#717171] pr-10"
