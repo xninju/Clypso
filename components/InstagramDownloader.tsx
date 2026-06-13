@@ -30,6 +30,7 @@ const POST_TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; c
 
 function proxyImg(url?: string | null): string | undefined {
   if (!url) return undefined;
+  if (url.startsWith("data:")) return url;
   return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
@@ -41,9 +42,9 @@ function Thumb({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const proxied = proxyImg(src);
+  const resolved = proxyImg(src);
 
-  if (!proxied || failed) {
+  if (!resolved || failed) {
     return (
       <div className={`bg-[#2a2a2a] flex items-center justify-center rounded-lg ${className || ""}`}>
         <Image size={20} className="text-[#555]" />
@@ -53,7 +54,7 @@ function Thumb({
 
   return (
     <img
-      src={proxied}
+      src={resolved}
       alt={alt}
       className={className}
       onError={() => setFailed(true)}
@@ -100,11 +101,11 @@ export default function InstagramDownloader() {
 
   const handleDownload = (item: MediaItem, index: number) => {
     logDownload("instagram", url, info?.post_type || "post");
+    const filename = `instagram_${index + 1}.${item.ext}`;
+    const proxyUrl = `/api/instagram/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(filename)}`;
     const a = document.createElement("a");
-    a.href = item.url;
-    a.download = `instagram_${index + 1}.${item.ext}`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
+    a.href = proxyUrl;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
