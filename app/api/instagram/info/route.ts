@@ -63,10 +63,26 @@ function fmtSize(size: unknown): string {
   return `${n.toFixed(1)} TB`;
 }
 
-// ─── Server-side thumbnail fetch → base64 data URL ────────────────────────────
-// Instagram CDN blocks browser requests, so we embed the image as a data URL.
+// ─── Thumbnail resolution: microlink → server-side fetch → base64 ─────────────
+// Instagram CDN blocks all direct browser requests.
+// Strategy: ask microlink.io for the OG image URL (free, no key needed),
+// then fetch THAT URL server-side (it returns 200) and embed as base64.
 
-async function thumbnailToDataUrl(url: string): Promise<string | null> {
+async function getMicrolinkThumbnail(igPostUrl: string): Promise<string | null> {
+  try {
+    const r = await fetch(
+      `https://api.microlink.io?url=${encodeURIComponent(igPostUrl)}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d?.data?.image?.url as string) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function imageToDataUrl(url: string): Promise<string | null> {
   if (!url || url.startsWith("data:")) return url || null;
   try {
     const r = await fetch(url, {
@@ -81,11 +97,28 @@ async function thumbnailToDataUrl(url: string): Promise<string | null> {
     if (!r.ok) return null;
     const ct = r.headers.get("content-type") || "image/jpeg";
     const buf = await r.arrayBuffer();
-    const b64 = Buffer.from(buf).toString("base64");
-    return `data:${ct};base64,${b64}`;
+    return `data:${ct};base64,${Buffer.from(buf).toString("base64")}`;
   } catch {
     return null;
   }
+}
+
+async function thumbnailToDataUrl(
+  rawUrl: string,
+  igPostUrl: string
+): Promise<string | null> {
+  // First try: fetch the CDN URL directly (sometimes works)
+  const direct = await imageToDataUrl(rawUrl);
+  if (direct) return direct;
+
+  // Second try: get a fresh CDN URL via microlink and fetch that
+  const microlinkUrl = await getMicrolinkThumbnail(igPostUrl);
+  if (microlinkUrl) {
+    const fromMicrolink = await imageToDataUrl(microlinkUrl);
+    if (fromMicrolink) return fromMicrolink;
+  }
+
+  return null;
 }
 
 // ─── API 1: diyorbekkanal ─────────────────────────────────────────────────────
@@ -359,10 +392,11 @@ export async function POST(req: Request) {
           null;
 
         // Embed thumbnails as data URLs (don't block the response if it fails)
+        // microlink is called at most once (only if direct CDN fetch fails)
         const [headerThumb, ...itemThumbs] = await Promise.all([
-          thumbnailToDataUrl(rawThumb || ""),
+          thumbnailToDataUrl(rawThumb || "", trimmed),
           ...(items as Record<string, unknown>[]).map((it) =>
-            thumbnailToDataUrl((it.thumbnail as string) || "")
+            thumbnailToDataUrl((it.thumbnail as string) || "", trimmed)
           ),
         ]);
 

@@ -2,3 +2,4 @@
 - [Admin dashboard](admin-dashboard.md) — PIN auth via ADMIN_PIN env var; PIN sent as X-Admin-Pin header; stored in sessionStorage; full key CRUD at /admin.
 - [Instagram audio fix](instagram-audio.md) — Prefer combined (vcodec+acodec != none) formats over video-only DASH streams in _pick_best_media.
 - [Proxy support](proxy-support.md) — Set PROXY_URL env var for yt-dlp to route through WARP/SOCKS5/HTTP proxy; no daemon needed in app code.
+- [Instagram thumbnail CDN fix](instagram-thumbnail.md) — cdn.akhmadjonov.uz and direct Instagram CDN both 403 from browser; use microlink.io API then fetch returned URL server-side to embed as base64.

@@ -74,10 +74,10 @@ function FormatModeToggle({
     audio:    formats.filter((f) => f.has_audio && !f.has_video).length,
   };
 
-  const options: { id: FormatMode; label: string; icon: React.ReactNode }[] = [
-    { id: "combined", label: "Video + Audio", icon: <Combine size={12} /> },
-    { id: "video",    label: "Video only",    icon: <VideoIcon size={12} /> },
-    { id: "audio",    label: "Audio only",    icon: <Volume2 size={12} /> },
+  const options: { id: FormatMode; label: string; sublabel: string; icon: React.ReactNode }[] = [
+    { id: "video",    label: "Video",          sublabel: "HD, no audio",    icon: <VideoIcon size={12} /> },
+    { id: "combined", label: "Video + Audio",  sublabel: "max 360p",        icon: <Combine size={12} /> },
+    { id: "audio",    label: "Audio only",     sublabel: "m4a",             icon: <Volume2 size={12} /> },
   ];
 
   return (
@@ -96,12 +96,10 @@ function FormatModeToggle({
           }`}
         >
           {o.icon}
-          {o.label}
-          {counts[o.id] > 0 && (
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${mode === o.id ? "bg-white/20 text-white" : "bg-[#1a1a1a] text-[#555]"}`}>
-              {counts[o.id]}
-            </span>
-          )}
+          <span>{o.label}</span>
+          <span className={`text-[10px] ${mode === o.id ? "text-white/60" : "text-[#555]"}`}>
+            {counts[o.id] > 0 ? `${counts[o.id]} · ${o.sublabel}` : o.sublabel}
+          </span>
         </button>
       ))}
     </div>
@@ -120,7 +118,9 @@ function FormatButtons({
   if (visible.length === 0) {
     return (
       <p className="text-xs text-[#555] py-2">
-        No {mode === "combined" ? "video+audio" : mode}-only formats available for this video.
+        {mode === "combined"
+          ? "No combined Video+Audio format available for this video. YouTube only provides 360p as a single file — use Video tab for HD, Audio tab for sound."
+          : `No ${mode}-only formats available for this video.`}
       </p>
     );
   }
@@ -153,7 +153,7 @@ export default function YoutubeDownloader() {
   const [playlistExpanded, setPlaylistExpanded] = useState(false);
   const [loadingFormats, setLoadingFormats] = useState<string | null>(null);
   const [videoFormats, setVideoFormats] = useState<Record<string, Format[]>>({});
-  const [formatMode, setFormatMode] = useState<FormatMode>("combined");
+  const [formatMode, setFormatMode] = useState<FormatMode>("video");
   const [playlistModes, setPlaylistModes] = useState<Record<string, FormatMode>>({});
 
   const handleFetch = async () => {
@@ -164,7 +164,12 @@ export default function YoutubeDownloader() {
     setFormatMode("combined");
     try {
       const res = await axios.post(`/api/youtube/info`, { url }, { timeout: 45000 });
-      setInfo(res.data);
+      const data = res.data;
+      // Default to "video" if there are video-only formats (typical for HD),
+      // fall back to "combined" if only muxed formats exist (rare/shorts)
+      const hasVideoOnly = (data.formats || []).some((f: Format) => f.has_video && !f.has_audio);
+      setFormatMode(hasVideoOnly ? "video" : "combined");
+      setInfo(data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string; error?: string } } };
       setError(
