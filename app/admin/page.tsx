@@ -71,19 +71,19 @@ const YT_SERVICES: Record<string, ServiceInfo> = {
 };
 
 const IG_SERVICES: Record<string, ServiceInfo> = {
-  ig_downloader: {
-    name: "Instagram Downloader (Videos/Stories)",
-    provider: "isholaomotayo",
-    host: "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com",
-    url: "https://rapidapi.com/isholaomotayo/api/instagram-downloader-download-instagram-videos-stories1",
-    free: "100 req/month",
+  ig_safesite: {
+    name: "Instagram Stories/Videos Downloader",
+    provider: "safesite15",
+    host: "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+    url: "https://rapidapi.com/safesite15/api/instagram-downloader-download-instagram-stories-videos4",
+    free: "40 req/month",
   },
-  ig_social: {
-    name: "Social Media Video Downloader",
-    provider: "ido2",
-    host: "social-media-video-downloader.p.rapidapi.com",
-    url: "https://rapidapi.com/ido2/api/social-media-video-downloader",
-    free: "~500 req/month",
+  ig_diyorbek: {
+    name: "Instagram Post/Reels Downloader",
+    provider: "diyorbekkanal",
+    host: "instagram-post-reels-stories-downloader-api.p.rapidapi.com",
+    url: "https://rapidapi.com/diyorbekkanal/api/instagram-post-reels-stories-downloader-api",
+    free: "100 req/month",
   },
 };
 
