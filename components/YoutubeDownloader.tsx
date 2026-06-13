@@ -4,11 +4,8 @@ import axios from "axios";
 import {
   Download, Search, X, List, Film, Zap,
   ChevronDown, ChevronUp, Clock, Eye,
-  Volume2, VideoIcon, VolumeX,
 } from "lucide-react";
 import { VideoInfoSkeleton } from "./Skeleton";
-
-type FormatMode = "video" | "audio";
 
 interface Format {
   format_id: string;
@@ -55,121 +52,50 @@ function formatViews(n?: number) {
   return n + " views";
 }
 
-function filterFormats(formats: Format[], mode: FormatMode): Format[] {
-  if (mode === "video") {
-    // Show all video formats: combined (already has audio) first, then video-only (merged server-side)
-    const combined = formats.filter((f) => f.has_video && f.has_audio);
-    const videoOnly = formats.filter((f) => f.has_video && !f.has_audio);
-    return [...combined, ...videoOnly];
-  }
-  if (mode === "audio") return formats.filter((f) => f.has_audio && !f.has_video);
-  return [];
+function qualityScore(label: string): number {
+  const m = label.match(/(\d+)/);
+  return m ? parseInt(m[1]) : 0;
 }
 
-function FormatModeToggle({
-  mode, setMode, formats,
-}: {
-  mode: FormatMode;
-  setMode: (m: FormatMode) => void;
-  formats: Format[];
-}) {
-  const counts = {
-    video: formats.filter((f) => f.has_video).length,
-    audio: formats.filter((f) => f.has_audio && !f.has_video).length,
-  };
-
-  const options: { id: FormatMode; label: string; sublabel: string; icon: React.ReactNode }[] = [
-    { id: "video", label: "Video",      sublabel: "with audio", icon: <VideoIcon size={12} /> },
-    { id: "audio", label: "Audio only", sublabel: "m4a",        icon: <Volume2 size={12} /> },
-  ];
-
-  return (
-    <div className="flex gap-1.5 flex-wrap mb-3">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          onClick={() => counts[o.id] > 0 && setMode(o.id)}
-          disabled={counts[o.id] === 0}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            mode === o.id
-              ? "bg-[#ff0000] text-white"
-              : counts[o.id] === 0
-              ? "bg-[#1a1a1a] text-[#444] cursor-not-allowed"
-              : "bg-[#2a2a2a] text-[#aaa] hover:text-[#f1f1f1] hover:bg-[#3a3a3a]"
-          }`}
-        >
-          {o.icon}
-          <span>{o.label}</span>
-          <span className={`text-[10px] ${mode === o.id ? "text-white/60" : "text-[#555]"}`}>
-            {counts[o.id] > 0 ? `${counts[o.id]} · ${o.sublabel}` : o.sublabel}
-          </span>
-        </button>
-      ))}
-    </div>
-  );
+function getBestFormat(formats: Format[]): Format | null {
+  const combined = formats.filter((f) => f.has_video && f.has_audio);
+  if (combined.length > 0) {
+    return combined.sort((a, b) => qualityScore(b.label) - qualityScore(a.label))[0];
+  }
+  const videoWithAudio = formats.filter((f) => f.has_video && f.audio_url);
+  if (videoWithAudio.length > 0) {
+    return videoWithAudio.sort((a, b) => qualityScore(b.label) - qualityScore(a.label))[0];
+  }
+  const anyVideo = formats.filter((f) => f.has_video);
+  if (anyVideo.length > 0) {
+    return anyVideo.sort((a, b) => qualityScore(b.label) - qualityScore(a.label))[0];
+  }
+  return null;
 }
 
-function FormatButtons({
-  formats, mode, onDownload,
+function DownloadButton({
+  formats,
+  title,
+  onDownload,
 }: {
   formats: Format[];
-  mode: FormatMode;
-  onDownload: (fmt: Format) => void;
+  title: string;
+  onDownload: (fmt: Format, title: string) => void;
 }) {
-  const visible = filterFormats(formats, mode);
-
-  if (visible.length === 0) {
-    return (
-      <p className="text-xs text-[#555] py-2">
-        No {mode === "audio" ? "audio" : "video"} formats available for this video.
-      </p>
-    );
-  }
+  const best = getBestFormat(formats);
+  if (!best) return null;
 
   return (
-    <>
-    {mode === "video" && visible.some((f) => f.has_video && !f.has_audio) && (
-      <p className="text-[11px] text-[#555] mb-2">
-        <VolumeX size={11} className="inline mr-1 text-[#444]" />
-        HD formats (720p+) are video only — YouTube doesn&apos;t provide HD with embedded audio.
-        Download <span className="text-[#aaa]">Audio only</span> separately to combine later.
-      </p>
-    )}
-    <div className="flex flex-wrap gap-2">
-      {visible.map((fmt) => {
-        const hasAudio = fmt.has_audio && fmt.has_video;
-        const videoOnly = fmt.has_video && !fmt.has_audio;
-        return (
-          <button
-            key={fmt.format_id}
-            onClick={() => onDownload(fmt)}
-            className={`format-btn bg-[#2a2a2a] border rounded-lg px-3 py-2 flex items-center gap-2 text-sm transition-colors ${
-              hasAudio
-                ? "border-[#1a4a1a] hover:border-[#22c55e]"
-                : "border-[#3a3a3a] hover:border-[#ff0000]"
-            }`}
-          >
-            <Download size={13} className={hasAudio ? "text-[#22c55e]" : "text-[#ff0000]"} />
-            <span className="font-medium">{fmt.label}</span>
-            <span className="text-xs text-[#717171]">{fmt.ext.toUpperCase()}</span>
-            {fmt.filesize !== "Unknown" && (
-              <span className="text-xs text-[#555]">{fmt.filesize}</span>
-            )}
-            {hasAudio && (
-              <span className="text-[10px] text-[#22c55e] flex items-center gap-0.5">
-                <Volume2 size={10} /> audio
-              </span>
-            )}
-            {videoOnly && (
-              <span className="text-[10px] text-[#555] flex items-center gap-0.5">
-                <VolumeX size={10} /> silent
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-    </>
+    <button
+      onClick={() => onDownload(best, title)}
+      className="w-full bg-[#ff0000] hover:bg-[#cc0000] text-white font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
+    >
+      <Download size={15} />
+      Download {best.label} {best.ext.toUpperCase()}
+      {best.filesize !== "Unknown" && (
+        <span className="text-white/60 text-xs">· {best.filesize}</span>
+      )}
+    </button>
   );
 }
 
@@ -181,20 +107,16 @@ export default function YoutubeDownloader() {
   const [playlistExpanded, setPlaylistExpanded] = useState(false);
   const [loadingFormats, setLoadingFormats] = useState<string | null>(null);
   const [videoFormats, setVideoFormats] = useState<Record<string, Format[]>>({});
-  const [formatMode, setFormatMode] = useState<FormatMode>("video");
-  const [playlistModes, setPlaylistModes] = useState<Record<string, FormatMode>>({} as Record<string, FormatMode>);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   const handleFetch = async () => {
     if (!url.trim()) return;
     setLoading(true);
     setError("");
     setInfo(null);
-    setFormatMode("video");
     try {
       const res = await axios.post(`/api/youtube/info`, { url }, { timeout: 45000 });
-      const data = res.data;
-      setFormatMode("video");
-      setInfo(data);
+      setInfo(res.data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string; error?: string } } };
       setError(
@@ -223,21 +145,29 @@ export default function YoutubeDownloader() {
     try {
       const res = await axios.post(`/api/youtube/playlist-video`, { url: video.url }, { timeout: 45000 });
       setVideoFormats((prev) => ({ ...prev, [video.id]: res.data.formats }));
-      setPlaylistModes((prev) => ({ ...prev, [video.id]: "video" }));
     } catch {}
     setLoadingFormats(null);
   };
 
   const handleDownload = (fmt: Format, title: string) => {
     logDownload("youtube", url, info?.type || "video");
+    const safeTitle = title.replace(/[^a-zA-Z0-9 ._-]/g, "_").slice(0, 100);
+    setDownloading(fmt.format_id);
+
+    let href: string;
+    if (fmt.has_video && fmt.audio_url) {
+      href = `/api/youtube/merge?videoUrl=${encodeURIComponent(fmt.url)}&audioUrl=${encodeURIComponent(fmt.audio_url)}&title=${encodeURIComponent(safeTitle)}&ext=${fmt.ext}`;
+    } else {
+      href = `/api/youtube/download?url=${encodeURIComponent(fmt.url)}&title=${encodeURIComponent(safeTitle)}&ext=${fmt.ext}`;
+    }
+
     const a = document.createElement("a");
-    a.href = fmt.url;
-    a.download = `${title}.${fmt.ext}`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
+    a.href = href;
+    a.download = `${safeTitle}.${fmt.ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    setTimeout(() => setDownloading(null), 3000);
   };
 
   const clear = () => { setUrl(""); setInfo(null); setError(""); };
@@ -288,6 +218,7 @@ export default function YoutubeDownloader() {
       {/* Result */}
       {!loading && info && (
         <div className="mt-5 animate-fade-in">
+
           {/* Single video / short */}
           {(info.type === "video" || info.type === "short") && (
             <div className="bg-[#212121] rounded-xl overflow-hidden border border-[#3a3a3a]">
@@ -330,12 +261,18 @@ export default function YoutubeDownloader() {
 
               {info.formats && info.formats.length > 0 && (
                 <div className="px-4 pb-4">
-                  <FormatModeToggle mode={formatMode} setMode={setFormatMode} formats={info.formats} />
-                  <FormatButtons
-                    formats={info.formats}
-                    mode={formatMode}
-                    onDownload={(fmt) => handleDownload(fmt, info.title)}
-                  />
+                  {downloading ? (
+                    <div className="w-full bg-[#2a2a2a] text-[#aaa] font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm">
+                      <div className="w-4 h-4 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+                      Preparing download...
+                    </div>
+                  ) : (
+                    <DownloadButton
+                      formats={info.formats}
+                      title={info.title}
+                      onDownload={handleDownload}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -375,8 +312,8 @@ export default function YoutubeDownloader() {
                   <div className="divide-y divide-[#3a3a3a] max-h-[480px] overflow-y-auto">
                     {info.videos.map((video, i) => (
                       <div key={video.id} className="p-3 hover:bg-[#2a2a2a] transition-colors">
-                        <div className="flex gap-3 items-start">
-                          <span className="text-xs text-[#717171] w-5 flex-shrink-0 pt-1">{i + 1}</span>
+                        <div className="flex gap-3 items-center">
+                          <span className="text-xs text-[#717171] w-5 flex-shrink-0">{i + 1}</span>
                           <img
                             src={video.thumbnail}
                             alt={video.title}
@@ -388,41 +325,30 @@ export default function YoutubeDownloader() {
                               <p className="text-xs text-[#717171] mt-0.5">{formatDuration(video.duration)}</p>
                             )}
                           </div>
-                          <button
-                            onClick={() => fetchVideoFormats(video)}
-                            className="flex-shrink-0 bg-[#ff0000] hover:bg-[#cc0000] text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
-                          >
-                            {loadingFormats === video.id ? (
-                              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Download size={12} />
-                            )}
-                            Get
-                          </button>
+                          {videoFormats[video.id] ? (
+                            <button
+                              onClick={() => {
+                                const best = getBestFormat(videoFormats[video.id]);
+                                if (best) handleDownload(best, video.title);
+                              }}
+                              className="flex-shrink-0 bg-[#ff0000] hover:bg-[#cc0000] text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
+                            >
+                              <Download size={12} /> Download
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => fetchVideoFormats(video)}
+                              className="flex-shrink-0 bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#aaa] hover:text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 border border-[#3a3a3a]"
+                            >
+                              {loadingFormats === video.id ? (
+                                <div className="w-3 h-3 border border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Download size={12} />
+                              )}
+                              Get
+                            </button>
+                          )}
                         </div>
-
-                        {videoFormats[video.id] && (
-                          <div className="mt-3 ml-8">
-                            <FormatModeToggle
-                              mode={playlistModes[video.id] || "video"}
-                              setMode={(m) => setPlaylistModes((prev) => ({ ...prev, [video.id]: m }))}
-                              formats={videoFormats[video.id]}
-                            />
-                            <div className="flex flex-wrap gap-1.5">
-                              {filterFormats(videoFormats[video.id], playlistModes[video.id] || "video").map((fmt) => (
-                                <button
-                                  key={fmt.format_id}
-                                  onClick={() => handleDownload(fmt, video.title)}
-                                  className="format-btn bg-[#1a1a1a] border border-[#3a3a3a] hover:border-[#ff0000] rounded px-2 py-1 text-xs flex items-center gap-1"
-                                >
-                                  <Download size={10} className="text-[#ff0000]" />
-                                  {fmt.label}
-                                  <span className="text-[#555]">{fmt.ext.toUpperCase()}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
