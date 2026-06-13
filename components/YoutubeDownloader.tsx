@@ -88,7 +88,7 @@ function DownloadButton({
   return (
     <button
       onClick={() => onDownload(best, title)}
-      className="w-full bg-[#ff0000] hover:bg-[#cc0000] text-white font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
+      className="w-full bg-white hover:bg-[#e8e8e8] text-[#0f0f0f] font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
     >
       <Download size={15} />
       Download {best.label} {best.ext.toUpperCase()}
@@ -99,8 +99,8 @@ function DownloadButton({
   );
 }
 
-export default function YoutubeDownloader({ onUrlChange }: { onUrlChange?: (url: string) => void }) {
-  const [url, setUrl] = useState("");
+export default function YoutubeDownloader({ onUrlChange, initialUrl }: { onUrlChange?: (url: string) => void; initialUrl?: string }) {
+  const [url, setUrl] = useState(initialUrl || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState<VideoInfo | null>(null);
@@ -194,7 +194,7 @@ export default function YoutubeDownloader({ onUrlChange }: { onUrlChange?: (url:
         <button
           onClick={handleFetch}
           disabled={loading || !url.trim()}
-          className="bg-[#ff0000] hover:bg-[#cc0000] disabled:bg-[#3a3a3a] disabled:text-[#717171] text-white font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
+          className="bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
         >
           {loading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -263,7 +263,7 @@ export default function YoutubeDownloader({ onUrlChange }: { onUrlChange?: (url:
                 <div className="px-4 pb-4">
                   {downloading ? (
                     <div className="w-full bg-[#2a2a2a] text-[#aaa] font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm">
-                      <div className="w-4 h-4 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Preparing download...
                     </div>
                   ) : (
@@ -331,7 +331,7 @@ export default function YoutubeDownloader({ onUrlChange }: { onUrlChange?: (url:
                                 const best = getBestFormat(videoFormats[video.id]);
                                 if (best) handleDownload(best, video.title);
                               }}
-                              className="flex-shrink-0 bg-[#ff0000] hover:bg-[#cc0000] text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
+                              className="flex-shrink-0 bg-white hover:bg-[#e8e8e8] text-[#0f0f0f] text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
                             >
                               <Download size={12} /> Download
                             </button>

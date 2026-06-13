@@ -42,7 +42,7 @@ export default function FeedbackSection() {
   return (
     <section className="py-16 px-4 bg-[#141414] border-t border-[#2a2a2a]">
       <div className="max-w-xl mx-auto">
-        <p className="text-xs text-[#ff0000] font-semibold uppercase tracking-widest text-center mb-2">Feedback</p>
+        <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Feedback</p>
         <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] text-center mb-2">Tell us what you think.</h2>
         <p className="text-[#717171] text-sm text-center mb-10">Your feedback helps us improve Clypso for everyone.</p>
 
@@ -78,8 +78,8 @@ export default function FeedbackSection() {
                     <Star
                       size={26}
                       className="transition-colors"
-                      fill={(hovered || rating) >= star ? "#ff0000" : "none"}
-                      stroke={(hovered || rating) >= star ? "#ff0000" : "#3a3a3a"}
+                      fill={(hovered || rating) >= star ? "#f1f1f1" : "none"}
+                      stroke={(hovered || rating) >= star ? "#f1f1f1" : "#3a3a3a"}
                       strokeWidth={1.5}
                     />
                   </button>
@@ -134,7 +134,7 @@ export default function FeedbackSection() {
             <button
               onClick={submit}
               disabled={loading || !name.trim() || !message.trim() || rating === 0}
-              className="w-full bg-[#ff0000] hover:bg-[#cc0000] disabled:bg-[#2a2a2a] disabled:text-[#555] text-white font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
+              className="w-full bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-medium px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

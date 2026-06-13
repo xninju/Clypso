@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Youtube, Instagram, ChevronDown, ChevronUp, Zap, UserX, Tv2 } from "lucide-react";
 import YoutubeDownloader from "@/components/YoutubeDownloader";
 import InstagramDownloader from "@/components/InstagramDownloader";
@@ -79,7 +79,7 @@ function FAQ({ q, a }: { q: string; a: string }) {
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("youtube");
-  const downloaderRef = useRef<HTMLDivElement>(null);
+  const [transferUrl, setTransferUrl] = useState("");
 
   useEffect(() => {
     if (!sessionStorage.getItem("visited")) {
@@ -94,8 +94,11 @@ export default function Home() {
 
   const handleUrlChange = (url: string) => {
     const v = url.trim().toLowerCase();
-    if (v.includes("youtube.com") || v.includes("youtu.be")) setTab("youtube");
-    else if (v.includes("instagram.com")) setTab("instagram");
+    if (v.includes("youtube.com") || v.includes("youtu.be")) {
+      if (tab !== "youtube") { setTransferUrl(url); setTab("youtube"); }
+    } else if (v.includes("instagram.com")) {
+      if (tab !== "instagram") { setTransferUrl(url); setTab("instagram"); }
+    }
   };
 
   return (
@@ -133,11 +136,11 @@ export default function Home() {
           </section>
 
           {/* ── Downloader tool ── */}
-          <section ref={downloaderRef} className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
+          <section className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
               {tab === "youtube"
-                ? <YoutubeDownloader onUrlChange={handleUrlChange} />
-                : <InstagramDownloader onUrlChange={handleUrlChange} />}
+                ? <YoutubeDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
+                : <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
 
               {/* API note */}
               <p className="text-center text-xs text-[#3d3d3d] mt-5 mb-1">
@@ -158,7 +161,7 @@ export default function Home() {
                 </span>
                 <span className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                   tab === "instagram"
-                    ? "bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] border-transparent text-white"
+                    ? "bg-white border-white text-[#0f0f0f]"
                     : "border-[#3a3a3a] text-[#555]"
                 }`}>
                   <Instagram size={15} /> Instagram
@@ -178,7 +181,7 @@ export default function Home() {
           {/* ── Workflow ── */}
           <section className="py-16 px-4 bg-[#0f0f0f]">
             <div className="max-w-3xl mx-auto">
-              <p className="text-xs text-[#ff0000] font-semibold uppercase tracking-widest text-center mb-2">Workflow</p>
+              <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Workflow</p>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] text-center mb-2">Three taps. Done.</h2>
               <p className="text-[#717171] text-sm text-center mb-10">No installs, no sign-ups. Just a link in, a video out. Works on phone, tablet and desktop.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -200,7 +203,7 @@ export default function Home() {
                   },
                 ].map((step) => (
                   <div key={step.n} className="bg-[#161616] border border-[#2a2a2a] rounded-2xl p-6">
-                    <span className="text-3xl font-bold text-[#ff0000] opacity-40">{step.n}</span>
+                    <span className="text-3xl font-bold text-white opacity-15">{step.n}</span>
                     <h3 className="text-base font-semibold text-[#f1f1f1] mt-3 mb-2">{step.title}</h3>
                     <p className="text-sm text-[#717171] leading-relaxed">{step.desc}</p>
                   </div>
@@ -212,13 +215,13 @@ export default function Home() {
           {/* ── Supported platforms ── */}
           <section className="py-16 px-4 bg-[#141414] border-y border-[#2a2a2a]">
             <div className="max-w-3xl mx-auto">
-              <p className="text-xs text-[#ff0000] font-semibold uppercase tracking-widest text-center mb-2">Supported</p>
+              <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Supported</p>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] text-center mb-2">Every platform you actually use.</h2>
               <p className="text-[#717171] text-sm text-center mb-10">From a viral Short to a full YouTube edit — Clypso handles them all.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { icon: <Youtube size={22} className="text-[#ff0000]" />, name: "YouTube", sub: "Videos · Shorts · Playlists", live: true },
-                  { icon: <Instagram size={22} className="text-[#e1306c]" />, name: "Instagram", sub: "Posts · Reels · Carousels", live: true },
+                  { icon: <Youtube size={22} className="text-[#f1f1f1]" />, name: "YouTube", sub: "Videos · Shorts · Playlists", live: true },
+                  { icon: <Instagram size={22} className="text-[#f1f1f1]" />, name: "Instagram", sub: "Posts · Reels · Carousels", live: true },
                   {
                     icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#444]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>,
                     name: "TikTok", sub: "Coming soon", live: false,
@@ -248,17 +251,17 @@ export default function Home() {
             <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
               {[
                 {
-                  icon: <Zap size={20} className="text-[#ff0000]" />,
+                  icon: <Zap size={20} className="text-[#f1f1f1]" />,
                   title: "Blazing fast",
                   desc: "Direct extraction, no queues, no ads in your face.",
                 },
                 {
-                  icon: <UserX size={20} className="text-[#ff0000]" />,
+                  icon: <UserX size={20} className="text-[#f1f1f1]" />,
                   title: "Login free",
                   desc: "We never ask for accounts, emails or passwords.",
                 },
                 {
-                  icon: <Tv2 size={20} className="text-[#ff0000]" />,
+                  icon: <Tv2 size={20} className="text-[#f1f1f1]" />,
                   title: "HD quality",
                   desc: "Get the best available resolution for every video.",
                 },
@@ -281,7 +284,7 @@ export default function Home() {
           {/* ── FAQ ── */}
           <section className="py-16 px-4 bg-[#0f0f0f] border-t border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
-              <p className="text-xs text-[#ff0000] font-semibold uppercase tracking-widest text-center mb-2">FAQ</p>
+              <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">FAQ</p>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] text-center mb-10">Questions, answered.</h2>
               <div className="flex flex-col gap-3">
                 {faqs.map((f) => (

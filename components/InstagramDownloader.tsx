@@ -62,8 +62,8 @@ function Thumb({
   );
 }
 
-export default function InstagramDownloader({ onUrlChange }: { onUrlChange?: (url: string) => void }) {
-  const [url, setUrl]           = useState("");
+export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrlChange?: (url: string) => void; initialUrl?: string }) {
+  const [url, setUrl]           = useState(initialUrl || "");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [info, setInfo]         = useState<IgInfo | null>(null);
@@ -137,7 +137,7 @@ export default function InstagramDownloader({ onUrlChange }: { onUrlChange?: (ur
         <button
           onClick={handleFetch}
           disabled={loading || !url.trim()}
-          className="bg-gradient-to-r from-[#833ab4] via-[#e1306c] to-[#fcaf45] disabled:from-[#3a3a3a] disabled:via-[#3a3a3a] disabled:to-[#3a3a3a] disabled:text-[#717171] text-white font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm"
+          className="bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-medium px-5 py-3 rounded-xl flex items-center gap-2 text-sm transition-colors"
         >
           {loading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

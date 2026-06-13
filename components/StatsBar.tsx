@@ -46,12 +46,12 @@ export default function StatsBar() {
                 value: stats ? formatNumber(stats.total_visits) : "—",
               },
               {
-                icon: <Youtube size={16} className="text-[#ff0000]" />,
+                icon: <Youtube size={16} className="text-[#aaa]" />,
                 label: "YouTube Downloads",
                 value: stats ? formatNumber(stats.yt_downloads) : "—",
               },
               {
-                icon: <Instagram size={16} className="text-[#e1306c]" />,
+                icon: <Instagram size={16} className="text-[#aaa]" />,
                 label: "Instagram Downloads",
                 value: stats ? formatNumber(stats.ig_downloads) : "—",
               },

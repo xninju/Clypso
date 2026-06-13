@@ -45,12 +45,12 @@ body {
 /* Input focus glow */
 .input-url:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
 .input-url-ig:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(225, 48, 108, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
 }
 
 /* Fade in animation */
