@@ -66,7 +66,7 @@ export default function StatsBar() {
               },
             ].map((item) => (
               <div key={item.label} className="stat-card rounded-xl p-4 flex flex-col gap-1">
-                <div className={`flex items-center gap-1.5 text-xs ${item.accent}`}>
+                <div className="flex items-center gap-1.5 text-xs text-[#717171]">
                   {item.icon}
                   <span>{item.label}</span>
                 </div>

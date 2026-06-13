@@ -79,6 +79,7 @@ function FAQ({ q, a }: { q: string; a: string }) {
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("youtube");
+  const [transferUrl, setTransferUrl] = useState("");
 
   useEffect(() => {
     if (!sessionStorage.getItem("visited")) {
@@ -90,6 +91,15 @@ export default function Home() {
       }).catch(() => {});
     }
   }, []);
+
+  const handleUrlChange = (url: string) => {
+    const v = url.trim().toLowerCase();
+    if ((v.includes("youtube.com") || v.includes("youtu.be")) && tab !== "youtube") {
+      setTransferUrl(url); setTab("youtube");
+    } else if (v.includes("instagram.com") && tab !== "instagram") {
+      setTransferUrl(url); setTab("instagram");
+    }
+  };
 
   return (
     <>
@@ -128,34 +138,9 @@ export default function Home() {
           {/* ── Downloader tool ── */}
           <section className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
-              {/* Platform switcher */}
-              <div className="flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1 mb-5 w-fit mx-auto">
-                <button
-                  onClick={() => setTab("youtube")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                    tab === "youtube"
-                      ? "bg-[#ff0000] text-white shadow"
-                      : "text-[#555] hover:text-[#aaa]"
-                  }`}
-                >
-                  <Youtube size={15} /> YouTube
-                </button>
-                <button
-                  onClick={() => setTab("instagram")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                    tab === "instagram"
-                      ? "text-white shadow"
-                      : "text-[#555] hover:text-[#aaa]"
-                  }`}
-                  style={tab === "instagram" ? { background: "linear-gradient(to right, #833ab4, #e1306c, #fcaf45)" } : {}}
-                >
-                  <Instagram size={15} /> Instagram
-                </button>
-              </div>
-
               {tab === "youtube"
-                ? <YoutubeDownloader />
-                : <InstagramDownloader />}
+                ? <YoutubeDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
+                : <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
 
               {/* Platform badges — decorative only */}
               <div className="flex items-center justify-center gap-2 mt-5 flex-wrap pointer-events-none select-none">

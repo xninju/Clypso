@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 const ADMIN_PIN = process.env.ADMIN_PIN || "admin123";
 
@@ -15,25 +13,17 @@ export async function GET(req: NextRequest) {
   const cursor = req.nextUrl.searchParams.get("cursor");
   const LIMIT = 50;
 
-  const feedbacks = await prisma.feedback.findMany({
+  const logs = await prisma.downloadLog.findMany({
     orderBy: { created_at: "desc" },
     take: LIMIT + 1,
     ...(cursor ? { where: { id: { lt: Number(cursor) } } } : {}),
   });
 
-  const hasMore = feedbacks.length > LIMIT;
-  if (hasMore) feedbacks.pop();
+  const hasMore = logs.length > LIMIT;
+  if (hasMore) logs.pop();
 
   return NextResponse.json({
-    feedbacks,
-    nextCursor: hasMore ? feedbacks[feedbacks.length - 1].id : null,
+    logs,
+    nextCursor: hasMore ? logs[logs.length - 1].id : null,
   });
-}
-
-export async function DELETE(req: NextRequest) {
-  if (!auth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { id } = await req.json();
-  await prisma.feedback.delete({ where: { id: Number(id) } });
-  return NextResponse.json({ ok: true });
 }

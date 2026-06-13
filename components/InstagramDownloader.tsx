@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Download, Search, X, Image, Video, Film, Grid } from "lucide-react";
 import { IgInfoSkeleton } from "./Skeleton";
@@ -64,6 +64,8 @@ function Thumb({
 
 export default function InstagramDownloader({ onUrlChange, initialUrl }: { onUrlChange?: (url: string) => void; initialUrl?: string }) {
   const [url, setUrl]           = useState(initialUrl || "");
+
+  useEffect(() => { if (initialUrl) setUrl(initialUrl); }, [initialUrl]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [info, setInfo]         = useState<IgInfo | null>(null);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Key, BarChart2, List, LogOut, Plus, Trash2,
   Edit3, Check, X, Eye, EyeOff, RefreshCw,
@@ -652,24 +652,45 @@ function KeysTab({ pin }: { pin: string }) {
 function LogsTab({ pin }: { pin: string }) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadLogs = useCallback(async (cur: number | null, replace: boolean) => {
+    if (replace) setLoading(true); else setLoadingMore(true);
     try {
-      const r = await fetch("/api/admin/dashboard", { headers: { "x-admin-pin": pin } });
+      const url = cur ? `/api/admin/logs?cursor=${cur}` : `/api/admin/logs`;
+      const r = await fetch(url, { headers: { "x-admin-pin": pin } });
       const d = await r.json();
-      setLogs(d.logs || []);
+      const newLogs: LogEntry[] = d.logs || [];
+      setLogs(prev => replace ? newLogs : [...prev, ...newLogs]);
+      setCursor(d.nextCursor ?? null);
+      setHasMore(d.nextCursor !== null);
     } catch {}
-    setLoading(false);
+    if (replace) setLoading(false); else setLoadingMore(false);
   }, [pin]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadLogs(null, true); }, [loadLogs]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasMore && !loadingMore) loadLogs(cursor, false); },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loadingMore, cursor, loadLogs]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-[#f1f1f1]">Recent Downloads <span className="text-[#555] font-normal">(last 50)</span></h2>
-        <button onClick={load} className="text-[#717171] hover:text-[#f1f1f1] p-2 rounded-lg hover:bg-[#2a2a2a] transition-colors">
+        <h2 className="text-sm font-semibold text-[#f1f1f1]">
+          Recent Downloads <span className="text-[#555] font-normal">({logs.length}{hasMore ? "+" : ""})</span>
+        </h2>
+        <button onClick={() => loadLogs(null, true)} className="text-[#717171] hover:text-[#f1f1f1] p-2 rounded-lg hover:bg-[#2a2a2a] transition-colors">
           <RefreshCw size={15} />
         </button>
       </div>
@@ -700,6 +721,17 @@ function LogsTab({ pin }: { pin: string }) {
               </div>
             ))}
           </div>
+          <div ref={sentinelRef} className="py-3 flex items-center justify-center">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-xs text-[#555]">
+                <div className="w-3 h-3 border border-[#555] border-t-transparent rounded-full animate-spin" />
+                Loading more…
+              </div>
+            )}
+            {!hasMore && logs.length > 0 && (
+              <span className="text-xs text-[#3a3a3a]">All caught up</span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -720,18 +752,39 @@ interface FeedbackEntry {
 function FeedbackTab({ pin }: { pin: string }) {
   const [items, setItems] = useState<FeedbackEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadItems = useCallback(async (cur: number | null, replace: boolean) => {
+    if (replace) setLoading(true); else setLoadingMore(true);
     try {
-      const r = await fetch("/api/admin/feedback", { headers: { "x-admin-pin": pin } });
+      const url = cur ? `/api/admin/feedback?cursor=${cur}` : `/api/admin/feedback`;
+      const r = await fetch(url, { headers: { "x-admin-pin": pin } });
       const d = await r.json();
-      setItems(d.feedbacks || []);
+      const newItems: FeedbackEntry[] = d.feedbacks || [];
+      setItems(prev => replace ? newItems : [...prev, ...newItems]);
+      setCursor(d.nextCursor ?? null);
+      setHasMore(d.nextCursor !== null);
     } catch {}
-    setLoading(false);
+    if (replace) setLoading(false); else setLoadingMore(false);
   }, [pin]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadItems(null, true); }, [loadItems]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasMore && !loadingMore) loadItems(cursor, false); },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loadingMore, cursor, loadItems]);
+
+  const load = useCallback(() => loadItems(null, true), [loadItems]);
 
   const remove = async (id: number) => {
     if (!confirm("Delete this feedback?")) return;
@@ -810,6 +863,17 @@ function FeedbackTab({ pin }: { pin: string }) {
               </div>
             </div>
           ))}
+          <div ref={sentinelRef} className="py-3 flex items-center justify-center">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-xs text-[#555]">
+                <div className="w-3 h-3 border border-[#555] border-t-transparent rounded-full animate-spin" />
+                Loading more…
+              </div>
+            )}
+            {!hasMore && items.length > 0 && (
+              <span className="text-xs text-[#3a3a3a]">All caught up</span>
+            )}
+          </div>
         </div>
       )}
     </div>
