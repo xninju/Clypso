@@ -1,35 +1,63 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Clypso — Free YouTube & Instagram Video Downloader";
+export const alt = "Clypso — Free YouTube, Instagram, Facebook & TikTok Video Downloader";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OgImage() {
+export default async function OgImage() {
+  const base = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
+  const imageData = await fetch(`${base}/og-source.jpg`);
+  const arrayBuffer = await imageData.arrayBuffer();
+
   return new ImageResponse(
     (
       <div
         style={{
           width: "1200px",
           height: "630px",
-          background: "#0f0f0f",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "sans-serif",
           position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* Top red accent line */}
-        <div
+        {/* Background image */}
+        <img
+          src={`data:image/jpeg;base64,${Buffer.from(arrayBuffer).toString("base64")}`}
           style={{
             position: "absolute",
             top: 0,
             left: 0,
-            right: 0,
+            width: "1200px",
+            height: "630px",
+            objectFit: "cover",
+          }}
+        />
+
+        {/* Dark overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.72)",
+            display: "flex",
+          }}
+        />
+
+        {/* Top accent line */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0,
             height: "4px",
-            background: "linear-gradient(90deg, #ff0000, #e1306c, #ff0000)",
+            background: "linear-gradient(90deg, #ff0000, #e1306c, #ff1744, #0062ff)",
             display: "flex",
           }}
         />
@@ -45,12 +73,12 @@ export default function OgImage() {
             borderRadius: "100px",
             padding: "8px 20px",
             marginBottom: "32px",
+            zIndex: 1,
           }}
         >
           <div
             style={{
-              width: "8px",
-              height: "8px",
+              width: "8px", height: "8px",
               borderRadius: "50%",
               background: "#22c55e",
               display: "flex",
@@ -69,6 +97,7 @@ export default function OgImage() {
             alignItems: "baseline",
             gap: "20px",
             marginBottom: "20px",
+            zIndex: 1,
           }}
         >
           <span
@@ -99,63 +128,73 @@ export default function OgImage() {
         <div
           style={{
             fontSize: "26px",
-            color: "#717171",
+            color: "#aaaaaa",
             textAlign: "center",
-            maxWidth: "700px",
+            maxWidth: "800px",
             lineHeight: 1.5,
             marginBottom: "48px",
             display: "flex",
+            zIndex: 1,
           }}
         >
-          Download YouTube & Instagram videos in HD. No app, no account needed.
+          Download YouTube, Instagram, Facebook & TikTok videos in HD. No app, no account needed.
         </div>
 
         {/* Platform pills */}
-        <div style={{ display: "flex", gap: "16px" }}>
+        <div style={{ display: "flex", gap: "14px", zIndex: 1 }}>
+
+          {/* YouTube */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              display: "flex", alignItems: "center", gap: "10px",
               background: "rgba(255,0,0,0.12)",
               border: "1px solid rgba(255,0,0,0.3)",
-              borderRadius: "100px",
-              padding: "12px 28px",
+              borderRadius: "100px", padding: "12px 24px",
             }}
           >
-            <div
-              style={{
-                width: "20px",
-                height: "20px",
-                background: "#ff0000",
-                borderRadius: "4px",
-                display: "flex",
-              }}
-            />
-            <span style={{ color: "#ff6b6b", fontSize: "22px", fontWeight: 600 }}>YouTube</span>
+            <div style={{ width: "20px", height: "20px", background: "#ff0000", borderRadius: "4px", display: "flex" }} />
+            <span style={{ color: "#ff6b6b", fontSize: "20px", fontWeight: 600 }}>YouTube</span>
           </div>
+
+          {/* Instagram */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              display: "flex", alignItems: "center", gap: "10px",
               background: "rgba(225,48,108,0.12)",
               border: "1px solid rgba(225,48,108,0.3)",
-              borderRadius: "100px",
-              padding: "12px 28px",
+              borderRadius: "100px", padding: "12px 24px",
             }}
           >
-            <div
-              style={{
-                width: "20px",
-                height: "20px",
-                background: "#e1306c",
-                borderRadius: "4px",
-                display: "flex",
-              }}
-            />
-            <span style={{ color: "#e1306c", fontSize: "22px", fontWeight: 600 }}>Instagram</span>
+            <div style={{ width: "20px", height: "20px", background: "#e1306c", borderRadius: "4px", display: "flex" }} />
+            <span style={{ color: "#e1306c", fontSize: "20px", fontWeight: 600 }}>Instagram</span>
           </div>
+
+          {/* Facebook */}
+          <div
+            style={{
+              display: "flex", alignItems: "center", gap: "10px",
+              background: "rgba(24,119,242,0.12)",
+              border: "1px solid rgba(24,119,242,0.3)",
+              borderRadius: "100px", padding: "12px 24px",
+            }}
+          >
+            <div style={{ width: "20px", height: "20px", background: "#1877f2", borderRadius: "4px", display: "flex" }} />
+            <span style={{ color: "#4d9ff5", fontSize: "20px", fontWeight: 600 }}>Facebook</span>
+          </div>
+
+          {/* TikTok */}
+          <div
+            style={{
+              display: "flex", alignItems: "center", gap: "10px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "100px", padding: "12px 24px",
+            }}
+          >
+            <div style={{ width: "20px", height: "20px", background: "#ffffff", borderRadius: "4px", display: "flex" }} />
+            <span style={{ color: "#ffffff", fontSize: "20px", fontWeight: 600 }}>TikTok</span>
+          </div>
+
         </div>
 
         {/* Bottom domain */}
@@ -164,13 +203,15 @@ export default function OgImage() {
             position: "absolute",
             bottom: "32px",
             display: "flex",
-            color: "#3a3a3a",
+            color: "#555",
             fontSize: "18px",
             letterSpacing: "0.05em",
+            zIndex: 1,
           }}
         >
           clypso.qzz.io
         </div>
+
       </div>
     ),
     { ...size }
