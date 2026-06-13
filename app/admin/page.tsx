@@ -164,8 +164,8 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-[#ff0000] rounded-xl flex items-center justify-center mb-3">
-            <Shield size={22} className="text-white" />
+          <div className="w-12 h-12 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl flex items-center justify-center mb-3">
+            <Shield size={22} className="text-[#f1f1f1]" />
           </div>
           <h1 className="text-xl font-bold text-[#f1f1f1]">Admin Access</h1>
           <p className="text-sm text-[#717171] mt-1">Enter your admin PIN to continue</p>
@@ -177,14 +177,14 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
             onChange={(e) => setPin(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder="••••••••"
-            className="w-full bg-[#212121] border border-[#3a3a3a] rounded-xl px-4 py-3 text-center text-xl tracking-widest text-[#f1f1f1] placeholder-[#555] focus:outline-none focus:border-[#ff0000]"
+            className="w-full bg-[#212121] border border-[#3a3a3a] rounded-xl px-4 py-3 text-center text-xl tracking-widest text-[#f1f1f1] placeholder-[#555] focus:outline-none focus:border-[#555]"
             autoFocus
           />
           {error && <p className="text-sm text-[#ff6b6b] text-center">{error}</p>}
           <button
             onClick={submit}
             disabled={loading || !pin}
-            className="w-full bg-[#ff0000] hover:bg-[#cc0000] disabled:bg-[#3a3a3a] disabled:text-[#717171] text-white font-semibold py-3 rounded-xl transition-colors"
+            className="w-full bg-white hover:bg-[#e8e8e8] disabled:bg-[#2a2a2a] disabled:text-[#555] text-[#0f0f0f] font-semibold py-3 rounded-xl transition-colors"
           >
             {loading ? "Verifying…" : "Enter"}
           </button>
@@ -864,8 +864,8 @@ export default function AdminPage() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* ── Logo: same as home page ── */}
-            <a href="/" className="w-7 h-7 bg-[#ff0000] rounded-lg flex items-center justify-center">
-              <img src="/logo.svg" alt="Clypso" className="w-4 h-4" />
+            <a href="/" className="w-7 h-7 rounded-lg flex items-center justify-center">
+              <img src="/logo.svg" alt="Clypso" className="w-6 h-6" />
             </a>
             <span className="text-sm text-[#717171]">/</span>
             <span className="text-sm font-semibold text-[#f1f1f1]">Admin</span>
@@ -885,13 +885,13 @@ export default function AdminPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === t.id
                   ? "bg-[#2a2a2a] text-[#f1f1f1]"
                   : "text-[#717171] hover:text-[#aaa]"
               }`}
             >
-              {t.icon} {t.label}
+              {t.icon} <span className="hidden sm:inline">{t.label}</span>
             </button>
           ))}
         </div>
