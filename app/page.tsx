@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Youtube, Instagram, ChevronDown, ChevronUp, Zap, UserX, Tv2 } from "lucide-react";
 import YoutubeDownloader from "@/components/YoutubeDownloader";
 import InstagramDownloader from "@/components/InstagramDownloader";
+import FacebookDownloader from "@/components/FacebookDownloader";
+import TikTokDownloader from "@/components/TikTokDownloader";
 import StatsBar from "@/components/StatsBar";
 import FeedbackSection from "@/components/FeedbackSection";
 import Script from "next/script";
 
-type Tab = "youtube" | "instagram";
+type Tab = "youtube" | "instagram" | "tiktok" | "facebook";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://clypso.qzz.io";
 
@@ -25,8 +27,16 @@ const faqs = [
     a: "Switch to the Instagram tab, paste the public Instagram post or Reel URL, and click Fetch. Your media will be ready to download instantly.",
   },
   {
+    q: "How do I download a TikTok video without watermark?",
+    a: "Switch to the TikTok tab, paste the TikTok video URL, and click Fetch. Clypso returns the original no-watermark version plus the audio track.",
+  },
+  {
+    q: "How do I download a Facebook video?",
+    a: "Switch to the Facebook tab, paste a public Facebook video or reel URL, and click Fetch. Both HD and SD versions are available where supported.",
+  },
+  {
     q: "Which platforms are supported?",
-    a: "Currently YouTube (videos, Shorts, playlists) and Instagram (posts, Reels, carousels). TikTok and Facebook support are coming soon.",
+    a: "YouTube (videos, Shorts, playlists), Instagram (posts, Reels, carousels), TikTok (no watermark), and Facebook (public videos and reels).",
   },
   {
     q: "Can I download an entire YouTube playlist?",
@@ -61,7 +71,7 @@ const jsonLd = [
     name: "Clypso",
     url: SITE_URL,
     description:
-      "Free online downloader for YouTube videos, Shorts, Playlists and Instagram Reels, Posts and Carousels. No login required, no watermark, HD quality.",
+      "Free online downloader for YouTube, Instagram, TikTok, and Facebook videos. No login required, no watermark, HD quality.",
     applicationCategory: "MultimediaApplication",
     operatingSystem: "Any",
     browserRequirements: "Requires JavaScript",
@@ -77,6 +87,8 @@ const jsonLd = [
       "Download Instagram Reels",
       "Download Instagram Posts",
       "Download Instagram Carousels",
+      "Download TikTok videos without watermark",
+      "Download Facebook videos",
       "No login required",
       "No watermark",
       "Free to use",
@@ -130,6 +142,51 @@ function FAQ({ q, a }: { q: string; a: string }) {
   );
 }
 
+const TABS: {
+  id: Tab;
+  label: string;
+  icon: React.ReactNode;
+  activeStyle: React.CSSProperties;
+  activeBg: string;
+}[] = [
+  {
+    id: "youtube",
+    label: "YouTube",
+    icon: <Youtube size={15} />,
+    activeStyle: { backgroundColor: "#ff0000", color: "#fff" },
+    activeBg: "#ff0000",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    icon: <Instagram size={15} />,
+    activeStyle: { background: "linear-gradient(to right, #833ab4, #e1306c)", color: "#fff" },
+    activeBg: "linear-gradient(to right, #833ab4, #e1306c)",
+  },
+  {
+    id: "tiktok",
+    label: "TikTok",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z" />
+      </svg>
+    ),
+    activeStyle: { background: "linear-gradient(135deg, #EE1D52, #69C9D0)", color: "#fff" },
+    activeBg: "linear-gradient(135deg, #EE1D52, #69C9D0)",
+  },
+  {
+    id: "facebook",
+    label: "Facebook",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+      </svg>
+    ),
+    activeStyle: { backgroundColor: "#1877F2", color: "#fff" },
+    activeBg: "#1877F2",
+  },
+];
+
 export default function Home() {
   const [tab, setTab] = useState<Tab>("youtube");
   const [transferUrl, setTransferUrl] = useState("");
@@ -151,6 +208,10 @@ export default function Home() {
       setTransferUrl(url); setTab("youtube");
     } else if (v.includes("instagram.com") && tab !== "instagram") {
       setTransferUrl(url); setTab("instagram");
+    } else if (v.includes("tiktok.com") && tab !== "tiktok") {
+      setTransferUrl(url); setTab("tiktok");
+    } else if ((v.includes("facebook.com") || v.includes("fb.com") || v.includes("fb.watch")) && tab !== "facebook") {
+      setTransferUrl(url); setTab("facebook");
     }
   };
 
@@ -166,7 +227,6 @@ export default function Home() {
       ))}
       <div className="min-h-screen flex flex-col">
 
-        {/* ── Navbar (untouched) ── */}
         <header className="border-b border-[#3a3a3a] bg-[#0f0f0f] sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -179,47 +239,47 @@ export default function Home() {
 
         <main className="flex-1">
 
-          {/* ── Hero ── */}
           <section className="bg-[#0f0f0f] pt-16 pb-12 px-4 text-center">
             <div className="max-w-2xl mx-auto">
               <h1 className="text-4xl sm:text-5xl font-bold text-[#f1f1f1] leading-tight mb-4">
                 Save any video.<br />Anywhere. Free.
               </h1>
               <p className="text-[#aaa] text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-                Paste a link from YouTube or Instagram. Clypso fetches the original file in HD MP4 — straight to your device.
+                Paste a link from YouTube, Instagram, TikTok or Facebook. Clypso fetches the original file in HD — straight to your device.
               </p>
             </div>
           </section>
 
-          {/* ── Downloader tool ── */}
           <section className="bg-[#141414] py-8 px-4 border-y border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
-              {tab === "youtube"
-                ? <YoutubeDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />
-                : <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
 
-              {/* Platform badges — decorative only */}
-              <div className="flex items-center justify-center gap-2 mt-5 flex-wrap pointer-events-none select-none">
-                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border bg-[#ff0000] border-[#ff0000] text-white cursor-default">
-                  <Youtube size={15} /> YouTube
-                </span>
-                <span
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border border-transparent text-white cursor-default"
-                  style={{ background: "linear-gradient(to right, #833ab4, #e1306c, #fcaf45)" }}
-                >
-                  <Instagram size={15} /> Instagram
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#555] cursor-default">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#69C9D0]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>
-                  TikTok <span className="text-[#444] text-xs">Soon</span>
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-[#2a2a2a] text-[#555] cursor-default">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  Facebook <span className="text-[#444] text-xs">Soon</span>
-                </span>
+              {/* Platform tab switcher */}
+              <div className="flex gap-2 mb-5 flex-wrap">
+                {TABS.map((t) => {
+                  const isActive = tab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setTab(t.id)}
+                      style={isActive ? t.activeStyle : undefined}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                        isActive
+                          ? "border-transparent"
+                          : "border-[#2a2a2a] text-[#717171] hover:text-[#aaa] hover:border-[#3a3a3a]"
+                      }`}
+                    >
+                      {t.icon}
+                      {t.label}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* API note */}
+              {tab === "youtube"   && <YoutubeDownloader   onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
+              {tab === "instagram" && <InstagramDownloader onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
+              {tab === "tiktok"    && <TikTokDownloader    onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
+              {tab === "facebook"  && <FacebookDownloader  onUrlChange={handleUrlChange} initialUrl={transferUrl} />}
+
               <p className="text-center text-xs text-[#3d3d3d] mt-5 mb-1">
                 <span className="inline-flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 flex-shrink-0 text-[#3d3d3d]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -229,7 +289,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── Workflow ── */}
           <section className="py-16 px-4 bg-[#0f0f0f]">
             <div className="max-w-3xl mx-auto">
               <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Workflow</p>
@@ -240,7 +299,7 @@ export default function Home() {
                   {
                     n: "01",
                     title: "Copy the link",
-                    desc: "Grab any video URL from YouTube or Instagram.",
+                    desc: "Grab any video URL from YouTube, Instagram, TikTok or Facebook.",
                   },
                   {
                     n: "02",
@@ -263,7 +322,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── Supported platforms ── */}
           <section className="py-16 px-4 bg-[#141414] border-y border-[#2a2a2a]">
             <div className="max-w-3xl mx-auto">
               <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">Supported</p>
@@ -273,29 +331,27 @@ export default function Home() {
                 {[
                   {
                     icon: <Youtube size={22} className="text-[#ff0000]" />,
-                    name: "YouTube", sub: "Videos · Shorts · Playlists", live: true, color: "text-[#ff0000]",
+                    name: "YouTube", sub: "Videos · Shorts · Playlists", live: true,
                   },
                   {
                     icon: <Instagram size={22} style={{ color: "#e1306c" }} />,
-                    name: "Instagram", sub: "Posts · Reels · Carousels", live: true, color: "text-[#e1306c]",
+                    name: "Instagram", sub: "Posts · Reels · Carousels", live: true,
                   },
                   {
-                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#69C9D0]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>,
-                    name: "TikTok", sub: "Coming soon", live: false, color: "text-[#69C9D0]",
+                    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#EE1D52]"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z"/></svg>,
+                    name: "TikTok", sub: "No watermark · Audio", live: true,
                   },
                   {
                     icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
-                    name: "Facebook", sub: "Coming soon", live: false, color: "text-[#1877F2]",
+                    name: "Facebook", sub: "Videos · Reels · HD", live: true,
                   },
                 ].map((p) => (
                   <div
                     key={p.name}
-                    className={`rounded-2xl border p-5 flex flex-col items-center text-center gap-2 ${
-                      p.live ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-[#111] border-[#1e1e1e] opacity-40"
-                    }`}
+                    className="rounded-2xl border p-5 flex flex-col items-center text-center gap-2 bg-[#1a1a1a] border-[#2a2a2a]"
                   >
                     {p.icon}
-                    <span className={`text-sm font-semibold ${p.live ? "text-[#f1f1f1]" : "text-[#555]"}`}>{p.name}</span>
+                    <span className="text-sm font-semibold text-[#f1f1f1]">{p.name}</span>
                     <span className="text-xs text-[#555]">{p.sub}</span>
                   </div>
                 ))}
@@ -303,7 +359,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── Features ── */}
           <section className="py-16 px-4 bg-[#0f0f0f]">
             <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
               {[
@@ -332,13 +387,9 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── Stats ── */}
           <StatsBar />
-
-          {/* ── Feedback ── */}
           <FeedbackSection />
 
-          {/* ── FAQ ── */}
           <section className="py-16 px-4 bg-[#0f0f0f] border-t border-[#2a2a2a]">
             <div className="max-w-2xl mx-auto">
               <p className="text-xs text-[#717171] font-semibold uppercase tracking-widest text-center mb-2">FAQ</p>
@@ -353,7 +404,6 @@ export default function Home() {
 
         </main>
 
-        {/* ── Footer ── */}
         <footer className="bg-[#0a0a0a] border-t border-[#2a2a2a] py-8 px-4">
           <div className="max-w-3xl mx-auto flex flex-col items-center gap-3 text-center">
             <div className="flex items-center gap-2">

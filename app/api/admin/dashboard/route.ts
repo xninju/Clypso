@@ -14,16 +14,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [stats, logs, ytKeys, igKeys] = await Promise.all([
+    const [stats, logs, ytKeys, igKeys, fbKeys, ttKeys] = await Promise.all([
       prisma.stats.findUnique({ where: { id: 1 } }),
       prisma.downloadLog.findMany({ orderBy: { created_at: "desc" }, take: 50 }),
       prisma.ytApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
       prisma.igApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
+      prisma.fbApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
+      prisma.ttApiKey.findMany({ orderBy: [{ priority: "asc" }, { id: "asc" }] }),
     ]);
 
     const keys = [
       ...ytKeys.map((k) => ({ ...k, platform: "yt" as const })),
       ...igKeys.map((k) => ({ ...k, platform: "ig" as const })),
+      ...fbKeys.map((k) => ({ ...k, platform: "fb" as const })),
+      ...ttKeys.map((k) => ({ ...k, platform: "tt" as const })),
     ];
 
     return NextResponse.json({ stats, logs, keys });

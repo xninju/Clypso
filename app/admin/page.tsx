@@ -19,13 +19,15 @@ interface ApiKey {
   req_count: number;
   createdAt: string;
   updatedAt: string;
-  platform?: "yt" | "ig";
+  platform?: "yt" | "ig" | "fb" | "tt";
 }
 
 interface Stats {
   total_visits: number;
   yt_downloads: number;
   ig_downloads: number;
+  fb_downloads: number;
+  tt_downloads: number;
 }
 
 interface LogEntry {
@@ -84,6 +86,33 @@ const IG_SERVICES: Record<string, ServiceInfo> = {
     host: "instagram-post-reels-stories-downloader-api.p.rapidapi.com",
     url: "https://rapidapi.com/diyorbekkanal/api/instagram-post-reels-stories-downloader-api",
     free: "100 req/month",
+  },
+};
+
+const FB_SERVICES: Record<string, ServiceInfo> = {
+  fb_bravedownz: {
+    name: "Facebook Story Saver & Video Downloader",
+    provider: "bravedownz",
+    host: "facebook-story-saver-and-video-downloader.p.rapidapi.com",
+    url: "https://rapidapi.com/bravedownz/api/facebook-story-saver-and-video-downloader",
+    free: "Free tier",
+  },
+};
+
+const TT_SERVICES: Record<string, ServiceInfo> = {
+  tt_7scorp: {
+    name: "TikTok Downloader (No Watermark)",
+    provider: "7scorp",
+    host: "tiktok-downloader-download-tiktok-videos-without-watermark.p.rapidapi.com",
+    url: "https://rapidapi.com/7scorp-7scorp-default/api/tiktok-downloader-download-tiktok-videos-without-watermark",
+    free: "Free tier · 9.9 rating",
+  },
+  tt_thucngv: {
+    name: "TikTok Video Downloader",
+    provider: "thucngv",
+    host: "tiktok-video-downloader.p.rapidapi.com",
+    url: "https://rapidapi.com/thucngv/api/tiktok-video-downloader",
+    free: "Free tier",
   },
 };
 
@@ -175,21 +204,68 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
+const TikTokIcon = ({ size = 14 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: size, height: size }}>
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.79a4.85 4.85 0 0 1-1.06-.1z" />
+  </svg>
+);
+
+const FacebookIcon = ({ size = 14 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: size, height: size }}>
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
+function KeyHealthList({ keys, services, emptyLabel }: { keys: ApiKey[]; services: Record<string, ServiceInfo>; emptyLabel: string }) {
+  if (keys.length === 0) {
+    return (
+      <div className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-4 text-center text-[#555] text-xs">
+        {emptyLabel}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {keys.map((k) => {
+        const meta = services[k.service];
+        return (
+          <div key={k.id} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl px-3 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${k.enabled ? "bg-green-500" : "bg-[#555]"}`} />
+              <div>
+                <p className="text-xs text-[#f1f1f1]">{meta?.name || k.service}</p>
+                <p className="text-xs text-[#555]">{k.label || meta?.host || ""}</p>
+              </div>
+            </div>
+            <span className="text-xs text-[#555] flex-shrink-0">{fmt(k.req_count)} req</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function OverviewTab({ stats, keys }: { stats: Stats | null; keys: ApiKey[] }) {
-  const total = stats ? stats.yt_downloads + stats.ig_downloads : 0;
+  const total = stats
+    ? stats.yt_downloads + stats.ig_downloads + (stats.fb_downloads || 0) + (stats.tt_downloads || 0)
+    : 0;
   const ytKeys = keys.filter((k) => k.platform === "yt");
   const igKeys = keys.filter((k) => k.platform === "ig");
+  const fbKeys = keys.filter((k) => k.platform === "fb");
+  const ttKeys = keys.filter((k) => k.platform === "tt");
 
   const statCards = [
-    { label: "Total Visits",        value: fmt(stats?.total_visits), icon: <Globe size={16} className="text-[#aaa]" /> },
-    { label: "YouTube Downloads",   value: fmt(stats?.yt_downloads),  icon: <Youtube size={16} className="text-[#ff0000]" /> },
-    { label: "Instagram Downloads", value: fmt(stats?.ig_downloads),  icon: <Instagram size={16} className="text-[#e1306c]" /> },
-    { label: "Total Downloads",     value: fmt(total),                icon: <Download size={16} className="text-[#aaa]" /> },
+    { label: "Total Visits",        value: fmt(stats?.total_visits),      icon: <Globe size={16} className="text-[#aaa]" /> },
+    { label: "YouTube",             value: fmt(stats?.yt_downloads),       icon: <Youtube size={16} className="text-[#ff0000]" /> },
+    { label: "Instagram",           value: fmt(stats?.ig_downloads),       icon: <Instagram size={16} className="text-[#e1306c]" /> },
+    { label: "TikTok",              value: fmt(stats?.tt_downloads || 0),  icon: <span className="text-[#EE1D52]"><TikTokIcon /></span> },
+    { label: "Facebook",            value: fmt(stats?.fb_downloads || 0),  icon: <span className="text-[#1877F2]"><FacebookIcon /></span> },
+    { label: "Total Downloads",     value: fmt(total),                     icon: <Download size={16} className="text-[#aaa]" /> },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {statCards.map((c) => (
           <div key={c.label} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-4">
             <div className="flex items-center gap-1.5 text-xs text-[#aaa] mb-1">
@@ -201,64 +277,29 @@ function OverviewTab({ stats, keys }: { stats: Stats | null; keys: ApiKey[] }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* YT key health */}
         <div>
           <h2 className="text-sm font-semibold text-[#aaa] uppercase tracking-wider mb-3 flex items-center gap-2">
             <Youtube size={14} className="text-[#ff0000]" /> YouTube Keys ({ytKeys.length})
           </h2>
-          {ytKeys.length === 0 ? (
-            <div className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-4 text-center text-[#555] text-xs">
-              No YouTube keys — add them in API Keys tab
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {ytKeys.map((k) => {
-                const meta = YT_SERVICES[k.service];
-                return (
-                  <div key={k.id} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl px-3 py-2.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${k.enabled ? "bg-green-500" : "bg-[#555]"}`} />
-                      <div>
-                        <p className="text-xs text-[#f1f1f1]">{meta?.name || k.service}</p>
-                        <p className="text-xs text-[#555]">{k.label || meta?.host || ""}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-[#555] flex-shrink-0">{fmt(k.req_count)} req</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <KeyHealthList keys={ytKeys} services={YT_SERVICES} emptyLabel="No YouTube keys — add them in API Keys tab" />
         </div>
-
-        {/* IG key health */}
         <div>
           <h2 className="text-sm font-semibold text-[#aaa] uppercase tracking-wider mb-3 flex items-center gap-2">
             <Instagram size={14} className="text-[#e1306c]" /> Instagram Keys ({igKeys.length})
           </h2>
-          {igKeys.length === 0 ? (
-            <div className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl p-4 text-center text-[#555] text-xs">
-              No Instagram keys — add them in API Keys tab
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {igKeys.map((k) => {
-                const meta = IG_SERVICES[k.service];
-                return (
-                  <div key={k.id} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-xl px-3 py-2.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${k.enabled ? "bg-green-500" : "bg-[#555]"}`} />
-                      <div>
-                        <p className="text-xs text-[#f1f1f1]">{meta?.name || k.service}</p>
-                        <p className="text-xs text-[#555]">{k.label || meta?.host || ""}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-[#555] flex-shrink-0">{fmt(k.req_count)} req</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <KeyHealthList keys={igKeys} services={IG_SERVICES} emptyLabel="No Instagram keys — add them in API Keys tab" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-[#aaa] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span className="text-[#EE1D52]"><TikTokIcon /></span> TikTok Keys ({ttKeys.length})
+          </h2>
+          <KeyHealthList keys={ttKeys} services={TT_SERVICES} emptyLabel="No TikTok keys — add them in API Keys tab" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-[#aaa] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span className="text-[#1877F2]"><FacebookIcon /></span> Facebook Keys ({fbKeys.length})
+          </h2>
+          <KeyHealthList keys={fbKeys} services={FB_SERVICES} emptyLabel="No Facebook keys — add them in API Keys tab" />
         </div>
       </div>
     </div>
@@ -566,6 +607,24 @@ function KeysTab({ pin }: { pin: string }) {
           accent="#c13584"
           services={IG_SERVICES}
           apiBase="/api/admin/ig-keys"
+          onToast={showToast}
+        />
+        <KeysPanel
+          pin={pin}
+          title="TikTok"
+          icon={<span className="text-[#EE1D52]"><TikTokIcon size={15} /></span>}
+          accent="#EE1D52"
+          services={TT_SERVICES}
+          apiBase="/api/admin/tt-keys"
+          onToast={showToast}
+        />
+        <KeysPanel
+          pin={pin}
+          title="Facebook"
+          icon={<span className="text-[#1877F2]"><FacebookIcon size={15} /></span>}
+          accent="#1877F2"
+          services={FB_SERVICES}
+          apiBase="/api/admin/fb-keys"
           onToast={showToast}
         />
       </div>
