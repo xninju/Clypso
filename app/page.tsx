@@ -180,7 +180,7 @@ export default function Home() {
           </section>
 
           {/* ── Downloader ── */}
-          <section className="px-4 py-10 border-y border-[#2a2a2a]">
+          <section className="px-4 py-10 border-y border-[#2a2a2a] bg-[#141414]">
             <div className="max-w-2xl mx-auto">
 
               {/* Single unified URL bar */}
